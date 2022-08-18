@@ -21,18 +21,18 @@ export DEVELOPER_DIR="/Applications/Xcode_${XCODE_VERSION}.app/Contents/Develope
 export ANDROID_HOME="/Users/kbuilder/Library/Android/sdk"
 export COURSIER_OPTS="-Djava.net.preferIPv6Addresses=true"
 
-# Note: When running on the Kokoro CI, we expect these two folders to exist:
-#
-#  ${KOKORO_ARTIFACTS_DIR}/git/tink_java
-#  ${KOKORO_ARTIFACTS_DIR}/git/tink_java_awskms
-#
-# If running locally make sure ../tink_java exists.
 if [[ -n "${KOKORO_ROOT:-}" ]] ; then
   cd "${KOKORO_ARTIFACTS_DIR}/git/tink_java_awskms"
   use_bazel.sh "$(cat .bazelversion)"
 fi
 
-readonly TINK_BASE_DIR="$(pwd)/.."
+: "${TINK_BASE_DIR:=$(cd .. && pwd)}"
+
+# Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
+# downloaded.
+readonly GITHUB_ORG="https://github.com/tink-crypto"
+./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
+  "${GITHUB_ORG}/tink-java"
 
 ./kokoro/testutils/update_android_sdk.sh
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \

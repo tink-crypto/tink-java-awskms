@@ -14,24 +14,20 @@
 # limitations under the License.
 ################################################################################
 
+# Fetches a list of deps if not already present in the given destination folder.
+#
+# This is useful for manual local tests.
+
 set -euo pipefail
 
-if [[ -n "${KOKORO_ROOT:-}" ]] ; then
-  cd "${KOKORO_ARTIFACTS_DIR}/git/tink_java_awskms"
-  use_bazel.sh "$(cat .bazelversion)"
-fi
+readonly DESTINATION_PATH="$1"
+shift 1
+readonly GIT_REPOS="$@"
 
-: "${TINK_BASE_DIR:=$(cd .. && pwd)}"
-
-# Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
-# downloaded.
-readonly GITHUB_ORG="https://github.com/tink-crypto"
-./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
-  "${GITHUB_ORG}/tink-java"
-
-source ./kokoro/testutils/install_python3.sh
-./kokoro/testutils/update_android_sdk.sh
-./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "WORKSPACE" \
-  -t "${TINK_BASE_DIR}"
-./kokoro/testutils/run_bazel_tests.sh .
+for git_repo in "${GIT_REPOS[@]}"; do
+  repo_folder_name="$(echo ${git_repo##*/} | sed 's#-#_#g')"
+  repo_full_path="${DESTINATION_PATH}/${repo_folder_name}"
+  if [[ ! -d "${repo_full_path}" ]]; then
+    git clone "${git_repo}.git" "${repo_full_path}"
+  fi
+done
