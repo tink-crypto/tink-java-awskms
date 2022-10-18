@@ -33,11 +33,18 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 source ./kokoro/testutils/install_python3.sh
 ./kokoro/testutils/update_android_sdk.sh
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "WORKSPACE" \
-  -t "${TINK_BASE_DIR}"
+  -f "WORKSPACE" -t "${TINK_BASE_DIR}"
+./kokoro/testutils/copy_credentials.sh "testdata" "aws"
+
 # Install the latest snapshot locally.
 ./maven/maven_deploy_library.sh install tink-awskms \
   maven/tink-java-awskms.pom.xml HEAD
-# Run tink-java's examples/helloworld against the local artifact.
-./kokoro/testutils/test_maven_snapshot.sh -l \
-  "${TINK_BASE_DIR}/tink_java/examples/helloworld/pom.xml"
+
+readonly AWS_CREDENTIALS="testdata/aws/credentials.cred"
+readonly AWS_TEST_KEY_URI="aws-kms://arn:aws:kms:us-east-2:235739564943:key/3ee50705-5a82-4f5b-9753-05c4f473922f"
+
+# Run the local test Maven example.
+mvn package --no-snapshot-updates -f examples/maven/pom.xml
+mvn exec:java --no-snapshot-updates -f examples/maven/pom.xml \
+  -Dexec.args="keyset.json ${AWS_CREDENTIALS} ${AWS_TEST_KEY_URI}"
+
