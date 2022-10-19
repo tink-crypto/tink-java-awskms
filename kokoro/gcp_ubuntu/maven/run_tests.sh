@@ -36,7 +36,12 @@ source ./kokoro/testutils/install_python3.sh
   -f "WORKSPACE" -t "${TINK_BASE_DIR}"
 ./kokoro/testutils/copy_credentials.sh "testdata" "aws"
 
-# Install the latest snapshot locally.
+# Install the latest snapshots locally.
+(
+  cd "${TINK_BASE_DIR}/tink_java"
+  ./maven/maven_deploy_library.sh install tink \
+    maven/tink-java.pom.xml HEAD
+)
 ./maven/maven_deploy_library.sh install tink-awskms \
   maven/tink-java-awskms.pom.xml HEAD
 
