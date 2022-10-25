@@ -98,11 +98,8 @@ main() {
   ./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
     "${GITHUB_ORG}/tink-java"
 
-  source ./kokoro/testutils/install_python3.sh
-  ./kokoro/testutils/update_android_sdk.sh
   ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-    -f "WORKSPACE" \
-    -t "${TINK_BASE_DIR}"
+    -f "WORKSPACE" -t "${TINK_BASE_DIR}"
 
   # Make sure dependencies of //:tink-awskms are correct.
   test_build_bazel_file
