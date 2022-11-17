@@ -24,7 +24,8 @@ export COURSIER_OPTS="-Djava.net.preferIPv6Addresses=true"
 if [[ -n "${KOKORO_ROOT:-}" ]] ; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
   cd "${TINK_BASE_DIR}/tink_java_awskms"
-  use_bazel.sh "$(cat .bazelversion)"
+  chmod +x "${KOKORO_GFILE_DIR}/use_bazel.sh"
+  "${KOKORO_GFILE_DIR}/use_bazel.sh" "$(cat .bazelversion)"
 fi
 
 : "${TINK_BASE_DIR:=$(cd .. && pwd)}"
