@@ -33,9 +33,9 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * A partial, fake implementation of AWSKMS that only supports encrypt and decrypt.
+ * A partial, fake implementation of AWS KMS that only supports encrypt and decrypt.
  *
- * <p>It creates a new AEAD for every valid key ID. It can encrypt message for these valid key IDs,
+ * <p>It creates a new AEAD for every valid key ID. It can encrypt a message for these valid key IDs,
  * but fails for all other key IDs. On decrypt, it tries out all its AEADs and returns the plaintext
  * and the key ID of the AEAD that can successfully decrypt it.
  */
@@ -88,9 +88,9 @@ final class FakeAwsKms extends AbstractAWSKMS {
             .withKeyId(entry.getKey())
             .withPlaintext(ByteBuffer.wrap(plaintext));
       } catch (GeneralSecurityException e) {
-        // try next key
+        // Try the next key.
       }
     }
-    throw new AmazonServiceException("unable to decrypt");
+    throw new AmazonServiceException("Unable to decrypt");
   }
 }
