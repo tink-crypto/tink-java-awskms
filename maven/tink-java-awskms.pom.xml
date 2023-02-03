@@ -90,7 +90,7 @@
     <auto-service-annotations.version>1.0.1</auto-service-annotations.version>
     <jsr305.version>3.0.2</jsr305.version>
     <error_prone_annotations.version>2.16</error_prone_annotations.version>
-    <guava.version>31.0.1-jre</guava.version>
+    <guava.version>31.1-jre</guava.version>
   </properties>
 
   <dependencies>
