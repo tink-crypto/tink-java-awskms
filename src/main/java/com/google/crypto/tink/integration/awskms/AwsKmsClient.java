@@ -54,7 +54,7 @@ public final class AwsKmsClient implements KmsClient {
    *
    * @deprecated use {@link #register}
    */
-  @Deprecated
+  @Deprecated /* TODO(b/245696196): check deprecation */
   public AwsKmsClient() {}
 
   /**
@@ -62,7 +62,7 @@ public final class AwsKmsClient implements KmsClient {
    *
    * @deprecated use {@link #register}
    */
-  @Deprecated
+  @Deprecated /* TODO(b/245696196): check deprecation */
   public AwsKmsClient(String uri) {
     if (!uri.toLowerCase(Locale.US).startsWith(PREFIX)) {
       throw new IllegalArgumentException("key URI must starts with " + PREFIX);
