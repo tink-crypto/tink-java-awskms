@@ -3,6 +3,7 @@
 <!-- GCP Ubuntu --->
 
 [tink_java_awskms_bazel_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-java-awskms-bazel-gcp-ubuntu.svg
+[tink_java_awskms_maven_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-java-awskms-maven-gcp-ubuntu.svg
 
 <!-- MacOS --->
 
@@ -11,6 +12,7 @@
 **Test**     | **GCP Ubuntu**                                                   | **MacOS**
 ------------ | ---------------------------------------------------------------- | ---------
 Tink (Bazel) | [![Bazel_GcpUbuntu][tink_java_awskms_bazel_badge_gcp_ubuntu]](#) | [![Bazel_MacOs][tink_java_awskms_bazel_badge_macos]](#)
+Tink (Maven) | [![Maven_GcpUbuntu][tink_java_awskms_maven_badge_gcp_ubuntu]](#) | N/A
 
 This is an extension to the
 [Tink Java](https://github.com/tink-crypto/tink-java) library that provides
