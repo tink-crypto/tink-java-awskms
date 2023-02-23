@@ -18,6 +18,8 @@ This is an extension to the
 [Tink Java](https://github.com/tink-crypto/tink-java) library that provides
 support for AWS KMS.
 
+The latest version is 1.8.0.
+
 The official documentation is available at https://developers.google.com/tink.
 
 ## Contact and mailing list
