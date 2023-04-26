@@ -17,10 +17,10 @@ package com.helloworld;
 import com.google.crypto.tink.Aead;
 import com.google.crypto.tink.JsonKeysetReader;
 import com.google.crypto.tink.JsonKeysetWriter;
-import com.google.crypto.tink.KeyTemplates;
 import com.google.crypto.tink.KeysetHandle;
 import com.google.crypto.tink.KmsClients;
 import com.google.crypto.tink.aead.AeadConfig;
+import com.google.crypto.tink.aead.PredefinedAeadParameters;
 import com.google.crypto.tink.integration.awskms.AwsKmsClient;
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +51,7 @@ public final class HelloWorld {
     if (keyset.exists()) {
       return KeysetHandle.read(JsonKeysetReader.withFile(keyset), masterKeyAead);
     }
-    KeysetHandle handle = KeysetHandle.generateNew(KeyTemplates.get("AES128_GCM"));
+    KeysetHandle handle = KeysetHandle.generateNew(PredefinedAeadParameters.AES128_GCM);
     handle.write(JsonKeysetWriter.withFile(keyset), masterKeyAead);
     return handle;
   }
