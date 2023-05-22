@@ -67,7 +67,7 @@ public final class AwsKmsAead implements Aead {
       throws GeneralSecurityException {
     try {
       DecryptRequest req =
-          new DecryptRequest()// place-holder, see b/170353401. DO NOT EDIT.
+          new DecryptRequest().withKeyId(keyArn)
               .withCiphertextBlob(ByteBuffer.wrap(ciphertext));
       if (associatedData != null && associatedData.length != 0) {
         req = req.addEncryptionContextEntry("associatedData", BinaryUtils.toHex(associatedData));
