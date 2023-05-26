@@ -14,11 +14,32 @@
 # limitations under the License.
 ################################################################################
 
+# By default when run locally this script runs the command below directly on the
+# host. The CONTAINER_IMAGE variable can be set to run on a custom container
+# image for local testing. E.g.:
+#
+# CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-cc-cmake:latest" \
+#  sh ./kokoro/gcp_ubuntu/bazel_fips/run_tests.sh
+#
+# The user may specify TINK_BASE_DIR as the folder where to look for
+# tink-java-awskms and its depndencies. That is:
+#   ${TINK_BASE_DIR}/tink_java
+#   ${TINK_BASE_DIR}/tink_java_awskms
+set -eEuo pipefail
+
+readonly C_PREFIX="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images"
+readonly GITHUB_ORG="https://github.com/tink-crypto"
+
+_create_test_command() {
+  cat <<'EOF' > _do_run_test.sh
 set -euo pipefail
 
-readonly GITHUB_ORG="https://github.com/tink-crypto"
-TINK_BASE_DIR=
 BAZEL_CMD="bazel"
+# Prefer using Bazelisk if available.
+if command -v "bazelisk" &> /dev/null; then
+  BAZEL_CMD="bazelisk"
+fi
+readonly BAZEL_CMD
 
 #######################################
 # Prints and error message with the missing deps for the given target diff-ing
@@ -84,32 +105,57 @@ kind(java_library,deps(//:tink-awskms,1)))" \
 }
 
 main() {
+  test_build_bazel_file
+  ./kokoro/testutils/run_bazel_tests.sh .
+}
+
+main "$@"
+EOF
+
+  chmod +x _do_run_test.sh
+}
+
+cleanup() {
+  rm -rf _do_run_test.sh
+  mv WORKSPACE.bak WORKSPACE
+}
+
+main() {
+  local run_command_args=()
   if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]] ; then
     TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
-    cd "${TINK_BASE_DIR}/tink_java_awskms"
+    local -r c_name="linux-tink-java-base"
+    local -r c_hash="f5b13615141aed34da573698c56a803b5dd7a7f740f4ed9d9dac31e20f860a1a"
+    CONTAINER_IMAGE="${C_PREFIX}/${c_name}@sha256:${c_hash}"
+    run_command_args+=( -k "${TINK_GCR_SERVICE_KEY}" )
   fi
-
   : "${TINK_BASE_DIR:=$(cd .. && pwd)}"
   readonly TINK_BASE_DIR
+  readonly CONTAINER_IMAGE
 
-  # Prefer using Bazelisk if available.
-  if command -v "bazelisk" &> /dev/null; then
-    BAZEL_CMD="bazelisk"
+  if [[ -n "${CONTAINER_IMAGE}" ]]; then
+    run_command_args+=( -c "${CONTAINER_IMAGE}" )
   fi
-  readonly BAZEL_CMD
+  readonly run_command_args
+
+  cd "${TINK_BASE_DIR}/tink_java_awskms"
 
   # Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
   # downloaded.
   ./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
     "${GITHUB_ORG}/tink-java"
 
+  cp WORKSPACE WORKSPACE.bak
+
   ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-    -f "WORKSPACE" -t "${TINK_BASE_DIR}"
+    -f WORKSPACE -t ..
 
-  # Make sure dependencies of //:tink-awskms are correct.
-  test_build_bazel_file
+  _create_test_command
 
-  ./kokoro/testutils/run_bazel_tests.sh .
+  # Run cleanup on EXIT.
+  trap cleanup EXIT
+
+  ./kokoro/testutils/run_command.sh "${run_command_args[@]}" ./_do_run_test.sh
 }
 
 main "$@"
