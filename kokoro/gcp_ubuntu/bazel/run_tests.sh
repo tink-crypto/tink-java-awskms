@@ -27,135 +27,58 @@
 #   ${TINK_BASE_DIR}/tink_java_awskms
 set -eEuo pipefail
 
-readonly C_PREFIX="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images"
 readonly GITHUB_ORG="https://github.com/tink-crypto"
 
-_create_test_command() {
-  cat <<'EOF' > _do_run_test.sh
+RUN_COMMAND_ARGS=()
+if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]] ; then
+  TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
+  readonly C_PREFIX="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images"
+  readonly C_NAME="linux-tink-java-base"
+  readonly C_HASH="f9c43b8158b304fb38f5ee0ef49151d10f641ec95ec72ee7ca5243f2d4b14de6"
+  CONTAINER_IMAGE="${C_PREFIX}/${C_NAME}@sha256:${C_HASH}"
+  RUN_COMMAND_ARGS+=( -k "${TINK_GCR_SERVICE_KEY}" )
+fi
+: "${TINK_BASE_DIR:=$(cd .. && pwd)}"
+readonly TINK_BASE_DIR
+readonly CONTAINER_IMAGE
+
+if [[ -n "${CONTAINER_IMAGE}" ]]; then
+  RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
+fi
+readonly RUN_COMMAND_ARGS
+
+cd "${TINK_BASE_DIR}/tink_java_awskms"
+
+# Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
+# downloaded.
+./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
+  "${GITHUB_ORG}/tink-java"
+
+cp WORKSPACE WORKSPACE.bak
+
+./kokoro/testutils/replace_http_archive_with_local_repository.py \
+  -f WORKSPACE -t ..
+
+cat <<'EOF' > _do_run_test.sh
 set -euo pipefail
 
-BAZEL_CMD="bazel"
-# Prefer using Bazelisk if available.
-if command -v "bazelisk" &> /dev/null; then
-  BAZEL_CMD="bazelisk"
+./tools/create_maven_build_file.sh -o BUILD.bazel.temp
+if ! cmp -s BUILD.bazel BUILD.bazel.temp; then
+  echo "ERROR: Update yuor BUILD.bazel file using ./tools/create_maven_build_file.sh" >&2
+  diff -u BUILD.bazel BUILD.bazel.temp
+  exit 1
 fi
-readonly BAZEL_CMD
-
-#######################################
-# Prints and error message with the missing deps for the given target diff-ing
-# the expected and actual list of targets.
-#
-# Globals:
-#   None
-# Arguments:
-#   target: Bazel target.
-#   expected_deps: Expected list of dependencies.
-#   actual_deps: Actual list of dependencies.
-# Outputs:
-#   Writes to stdout
-#######################################
-print_missing_deps() {
-  local -r target="$1"
-  local -r expected_deps="$2"
-  local -r actual_deps="$3"
-
-  echo "#========= ERROR ${target} target:"
-  echo "The following dependencies are missing from the ${target} target:"
-  diff --changed-group-format='%>' --unchanged-group-format='' \
-    "${actual_deps}" "${expected_deps}"
-  echo "#==============================="
-}
-
-#######################################
-# Checks if the //:tink-awskms has all the required dependencies.
-#
-# Globals:
-#   None
-# Arguments:
-#   None
-# Outputs:
-#   Writes to stdout
-#######################################
-test_build_bazel_file() {
-  local -r tink_java_prefix="//src/main/java/com/google/crypto/tink"
-  local -r tink_java_integration_awskms_prefix="${tink_java_prefix}/integration/awskms"
-
-  # Targets in tink_java_integration_awskms_prefix of type java_library,
-  # excluding testonly targets.
-  local -r expected_awskms_deps="$(mktemp)"
-  "${BAZEL_CMD}" query "\
-kind(java_library,${tink_java_integration_awskms_prefix}/...) \
-except attr(testonly,1,${tink_java_integration_awskms_prefix}/...)" \
-    > "${expected_awskms_deps}"
-
-  # Dependencies of //:tink-awskms of type java_library that are in
-  # tink_java_integration_awskms_prefix.
-  # Note: Considering only direct dependencies of the target.
-  local -r actual_awskms_targets="$(mktemp)"
-  "${BAZEL_CMD}" query "filter(\
-${tink_java_integration_awskms_prefix},\
-kind(java_library,deps(//:tink-awskms,1)))" \
-    > "${actual_awskms_targets}"
-
-  if ! cmp -s "${actual_awskms_targets}" "${expected_awskms_deps}"; then
-    print_missing_deps "//:tink-awskms" "${expected_awskms_deps}" \
-      "${actual_awskms_targets}"
-    exit 1
-  fi
-}
-
-main() {
-  test_build_bazel_file
-  ./kokoro/testutils/run_bazel_tests.sh .
-}
-
-main "$@"
+./kokoro/testutils/run_bazel_tests.sh .
 EOF
+chmod +x _do_run_test.sh
 
-  chmod +x _do_run_test.sh
-}
+# Run cleanup on EXIT.
+trap cleanup EXIT
 
 cleanup() {
   rm -rf _do_run_test.sh
+  rm -rf BUILD.bazel.temp
   mv WORKSPACE.bak WORKSPACE
 }
 
-main() {
-  local run_command_args=()
-  if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]] ; then
-    TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
-    local -r c_name="linux-tink-java-base"
-    local -r c_hash="f5b13615141aed34da573698c56a803b5dd7a7f740f4ed9d9dac31e20f860a1a"
-    CONTAINER_IMAGE="${C_PREFIX}/${c_name}@sha256:${c_hash}"
-    run_command_args+=( -k "${TINK_GCR_SERVICE_KEY}" )
-  fi
-  : "${TINK_BASE_DIR:=$(cd .. && pwd)}"
-  readonly TINK_BASE_DIR
-  readonly CONTAINER_IMAGE
-
-  if [[ -n "${CONTAINER_IMAGE}" ]]; then
-    run_command_args+=( -c "${CONTAINER_IMAGE}" )
-  fi
-  readonly run_command_args
-
-  cd "${TINK_BASE_DIR}/tink_java_awskms"
-
-  # Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
-  # downloaded.
-  ./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
-    "${GITHUB_ORG}/tink-java"
-
-  cp WORKSPACE WORKSPACE.bak
-
-  ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-    -f WORKSPACE -t ..
-
-  _create_test_command
-
-  # Run cleanup on EXIT.
-  trap cleanup EXIT
-
-  ./kokoro/testutils/run_command.sh "${run_command_args[@]}" ./_do_run_test.sh
-}
-
-main "$@"
+./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" ./_do_run_test.sh
