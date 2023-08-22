@@ -25,7 +25,6 @@ java_test(
         "@tink_java//src/main/java/com/google/crypto/tink:key_template",
         "@tink_java//src/main/java/com/google/crypto/tink:key_templates",
         "@tink_java//src/main/java/com/google/crypto/tink:kms_client",
-        "@tink_java//src/main/java/com/google/crypto/tink:kms_clients",
         "@tink_java//src/main/java/com/google/crypto/tink:kms_clients_test_util",
         "@tink_java//src/main/java/com/google/crypto/tink:registry_cluster",
         "@tink_java//src/main/java/com/google/crypto/tink/aead:aead_config",
