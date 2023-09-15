@@ -196,7 +196,7 @@ public final class AwsKmsClient implements KmsClient {
    *     create an envelope {@code Aead} using {@code KmsEnvelopeAead.create}.
    */
   @Deprecated
-  /* OSS: public */ static void register(Optional<String> keyUri, Optional<String> credentialPath)
+  public static void register(Optional<String> keyUri, Optional<String> credentialPath)
       throws GeneralSecurityException {
     registerWithAwsKms(keyUri, credentialPath, null);
   }
