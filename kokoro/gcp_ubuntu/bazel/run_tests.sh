@@ -14,49 +14,39 @@
 # limitations under the License.
 ################################################################################
 
-# By default when run locally this script runs the command below directly on the
-# host. The CONTAINER_IMAGE variable can be set to run on a custom container
-# image for local testing. E.g.:
+# Builds and tests tink-java-awskms using Bazel.
 #
-# CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-java-base:latest" \
-#  sh ./kokoro/gcp_ubuntu/bazel/run_tests.sh
+# The behavior of this script can be modified using the following optional env
+# variables:
 #
-# The user may specify TINK_BASE_DIR as the folder where to look for
-# tink-java-awskms and its depndencies. That is:
-#   ${TINK_BASE_DIR}/tink_java
-#   ${TINK_BASE_DIR}/tink_java_awskms
+# - CONTAINER_IMAGE (unset by default): By default when run locally this script
+#   executes tests directly on the host. The CONTAINER_IMAGE variable can be set
+#   to execute tests in a custom container image for local testing. E.g.:
+#
+#   CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-java-base:latest" \
+#     sh ./kokoro/gcp_ubuntu/bazel/run_tests.sh
 set -eEuo pipefail
 
-readonly GITHUB_ORG="https://github.com/tink-crypto"
+: "${USE_LOCAL_TINK_JAVA:=true}"
+if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_default_deps/.* ]]; then
+  USE_LOCAL_TINK_JAVA="false"
+fi
+readonly USE_LOCAL_TINK_JAVA
 
 RUN_COMMAND_ARGS=()
 if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]] ; then
-  TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
-  source \
-    "${TINK_BASE_DIR}/tink_java_awskms/kokoro/testutils/java_test_container_images.sh"
+  readonly TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
+  cd "${TINK_BASE_DIR}/tink_java_awskms"
+  source ./kokoro/testutils/java_test_container_images.sh
   CONTAINER_IMAGE="${TINK_JAVA_BASE_IMAGE}"
   RUN_COMMAND_ARGS+=( -k "${TINK_GCR_SERVICE_KEY}" )
 fi
-: "${TINK_BASE_DIR:=$(cd .. && pwd)}"
-readonly TINK_BASE_DIR
 readonly CONTAINER_IMAGE
 
-if [[ -n "${CONTAINER_IMAGE}" ]]; then
+if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
   RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
 fi
 readonly RUN_COMMAND_ARGS
-
-cd "${TINK_BASE_DIR}/tink_java_awskms"
-
-# Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
-# downloaded.
-./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
-  "${GITHUB_ORG}/tink-java"
-
-cp WORKSPACE WORKSPACE.bak
-
-./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f WORKSPACE -t ..
 
 cat <<'EOF' > _do_run_test.sh
 set -euo pipefail
@@ -77,7 +67,6 @@ trap cleanup EXIT
 cleanup() {
   rm -rf _do_run_test.sh
   rm -rf BUILD.bazel.temp
-  mv WORKSPACE.bak WORKSPACE
 }
 
 ./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" ./_do_run_test.sh
