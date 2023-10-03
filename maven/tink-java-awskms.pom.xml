@@ -85,12 +85,12 @@
   <properties>
     <java.version>1.8</java.version>
     <tink.version>1.11.0</tink.version>
-    <aws-java-sdk-core.version>1.12.182</aws-java-sdk-core.version>
-    <aws-java-sdk-kms.version>1.12.182</aws-java-sdk-kms.version>
-    <auto-service-annotations.version>1.0.1</auto-service-annotations.version>
+    <aws-java-sdk-core.version>1.12.560</aws-java-sdk-core.version>
+    <aws-java-sdk-kms.version>1.12.560</aws-java-sdk-kms.version>
+    <auto-service-annotations.version>1.1.1</auto-service-annotations.version>
     <jsr305.version>3.0.2</jsr305.version>
-    <error_prone_annotations.version>2.18.0</error_prone_annotations.version>
-    <guava.version>31.1-jre</guava.version>
+    <error_prone_annotations.version>2.22.0</error_prone_annotations.version>
+    <guava.version>32.0.1-jre</guava.version>
   </properties>
 
   <dependencies>
@@ -103,11 +103,6 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-kms</artifactId>
       <version>${aws-java-sdk-kms.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.auto.service</groupId>
@@ -128,6 +123,11 @@
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_annotations</artifactId>
       <version>${error_prone_annotations.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
     </dependency>
   </dependencies>
 </project>
