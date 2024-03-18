@@ -143,12 +143,7 @@
 <dl>
 <dt><span class="memberNameLink"><a href="com/google/crypto/tink/integration/awskms/AwsKmsClient.html#register-java.util.Optional-java.util.Optional-">register(Optional&lt;String&gt;, Optional&lt;String&gt;)</a></span> - Static method in class com.google.crypto.tink.integration.awskms.<a href="com/google/crypto/tink/integration/awskms/AwsKmsClient.html" title="class in com.google.crypto.tink.integration.awskms">AwsKmsClient</a></dt>
 <dd>
-<div class="block"><span class="deprecatedLabel">Deprecated.</span>
-<div class="block"><span class="deprecationComment">It is preferable to not register KMS clients. Instead, create the AwsKmsClient
-     yourself and call <code>getAead</code> to get a remote <code>Aead</code>. Use this <code>Aead</code> to
-     encrypt a keyset for with <code>TinkProtoKeysetFormat.serializeEncryptedKeyset</code>, or to
-     create an envelope <code>Aead</code> using <code>KmsEnvelopeAead.create</code>.</span></div>
-</div>
+<div class="block">Creates and registers a <a href="com/google/crypto/tink/integration/awskms/AwsKmsClient.html#AwsKmsClient-java.lang.String-"><code>AwsKmsClient(java.lang.String)</code></a> with the Tink runtime.</div>
 </dd>
 </dl>
 <a name="I:W">
