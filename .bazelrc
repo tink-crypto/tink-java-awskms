@@ -1,0 +1,6 @@
+# TODO: b/332650707 - Explicitly disable bzlmod until supported.
+always --noenable_bzlmod
+# Minumum C++ version. Override it building this project with
+# `bazel build --cxxopt='-std=c++<XY>' --host_cxxopt='c++<XY>' ...`
+# (Both -std and --host_cxxopt must be set to force the desired version.)
+build --cxxopt='-std=c++17' --host_cxxopt='-std=c++17'
