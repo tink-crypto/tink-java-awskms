@@ -47,6 +47,17 @@ if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
   RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
 fi
 
+# File that stores environment variables to pass to the container.
+readonly ENV_VARIABLES_FILE="/tmp/env_variables.txt"
+
+if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
+  cp "${TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY}" ./cache_key
+  cat <<EOF > "${ENV_VARIABLES_FILE}"
+BAZEL_REMOTE_CACHE_NAME=${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET}/bazel/${TINK_JAVA_BASE_IMAGE_HASH}
+EOF
+  RUN_COMMAND_ARGS+=( -e "${ENV_VARIABLES_FILE}" )
+fi
+
 cat <<'EOF' > _do_run_test.sh
 set -euo pipefail
 
@@ -55,8 +66,14 @@ set -euo pipefail
   -e "com.google.crypto.tink:tink" "//:tink-awskms" \
   "maven/tink-java-awskms.pom.xml"
 
-./maven/maven_deploy_library.sh install tink-awskms \
-  maven/tink-java-awskms.pom.xml HEAD
+MAVEN_DEPLOY_LIBRARY_OPTS=()
+if [[ -n "${BAZEL_REMOTE_CACHE_NAME:-}" ]]; then
+  MAVEN_DEPLOY_LIBRARY_OPTS+=( -c "${BAZEL_REMOTE_CACHE_NAME}" )
+fi
+readonly MAVEN_DEPLOY_LIBRARY_OPTS
+
+./maven/maven_deploy_library.sh "${MAVEN_DEPLOY_LIBRARY_OPTS[@]}" install \
+  tink-awskms maven/tink-java-awskms.pom.xml HEAD
 
 readonly AWS_CREDENTIALS="testdata/aws/credentials.cred"
 readonly AWS_TEST_KEY_URI="aws-kms://arn:aws:kms:us-east-2:235739564943:key/3ee50705-5a82-4f5b-9753-05c4f473922f"
@@ -75,7 +92,7 @@ chmod +x _do_run_test.sh
 trap cleanup EXIT
 
 cleanup() {
-  rm -rf _do_run_test.sh
+  rm -rf _do_run_test.sh "${ENV_VARIABLES_FILE}"
 }
 
 ./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" ./_do_run_test.sh
@@ -90,11 +107,10 @@ if [[ "${IS_KOKORO}" == "true" \
 
   # Share the required env variables with the container to allow publishing the
   # snapshot on Sonatype.
-  cat <<EOF > env_variables.txt
+  cat <<EOF >> "${ENV_VARIABLES_FILE}"
 SONATYPE_USERNAME
 SONATYPE_PASSWORD
 EOF
-  RUN_COMMAND_ARGS+=( -e env_variables.txt )
 
   ./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \
     ./maven/maven_deploy_library.sh -u "${GITHUB_URL}" snapshot tink-awskms \

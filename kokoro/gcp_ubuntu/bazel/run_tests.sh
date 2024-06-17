@@ -46,6 +46,15 @@ readonly CONTAINER_IMAGE
 if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
   RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
 fi
+
+if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
+  cp "${TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY}" ./cache_key
+  cat <<EOF > /tmp/env_variables.txt
+BAZEL_REMOTE_CACHE_NAME=${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET}/bazel/${TINK_JAVA_BASE_IMAGE_HASH}
+EOF
+  RUN_COMMAND_ARGS+=( -e /tmp/env_variables.txt )
+fi
+
 readonly RUN_COMMAND_ARGS
 
 cat <<'EOF' > _do_run_test.sh
@@ -57,7 +66,14 @@ if ! cmp -s BUILD.bazel BUILD.bazel.temp; then
   diff -u BUILD.bazel BUILD.bazel.temp
   exit 1
 fi
-./kokoro/testutils/run_bazel_tests.sh .
+
+CACHE_FLAGS=()
+if [[ -n "${BAZEL_REMOTE_CACHE_NAME:-}" ]]; then
+  CACHE_FLAGS+=( -c "${BAZEL_REMOTE_CACHE_NAME}" )
+fi
+readonly CACHE_FLAGS
+
+./kokoro/testutils/run_bazel_tests.sh "${CACHE_FLAGS[@]}" .
 EOF
 chmod +x _do_run_test.sh
 
