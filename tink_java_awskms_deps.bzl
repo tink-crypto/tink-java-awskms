@@ -27,10 +27,10 @@ TINK_JAVA_AWSKMS_MAVEN_ARTIFACTS = [
 def tink_java_awskms_deps():
     """Bazel dependencies for tink-java-awskms."""
     if not native.existing_rule("tink_java"):
-        # Jul 4th, 2024.
+        # 2024-08-15
         http_archive(
             name = "tink_java",
-            urls = ["https://github.com/tink-crypto/tink-java/releases/download/v1.14.0/tink-java-1.14.0.zip"],
-            strip_prefix = "tink-java-1.14.0",
-            sha256 = "54316e74f759bf7562d7a63c0340c66fe63917310433e547ad6d37acb75fa7c8",
+            urls = ["https://github.com/tink-crypto/tink-java/releases/download/v1.14.1/tink-java-1.14.1.zip"],
+            strip_prefix = "tink-java-1.14.1",
+            sha256 = "1f8a2df8fcbfc9b19fba0d5f58cdcc12021cb33cdc307d22d840b437fd17347c",
         )
