@@ -27,7 +27,7 @@ TINK_JAVA_AWSKMS_MAVEN_ARTIFACTS = [
 def tink_java_awskms_deps():
     """Bazel dependencies for tink-java-awskms."""
     if not native.existing_rule("tink_java"):
-        # 2024-08-15
+        # Release from 2024-08-15.
         http_archive(
             name = "tink_java",
             urls = ["https://github.com/tink-crypto/tink-java/releases/download/v1.14.1/tink-java-1.14.1.zip"],
