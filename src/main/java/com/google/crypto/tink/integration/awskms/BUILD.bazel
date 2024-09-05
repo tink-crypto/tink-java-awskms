@@ -39,6 +39,7 @@ java_library(
         "@tink_java//src/main/java/com/google/crypto/tink:aead",
         "@tink_java//src/main/java/com/google/crypto/tink:key_templates",
         "@tink_java//src/main/java/com/google/crypto/tink:registry_cluster",
+        "@tink_java//src/main/java/com/google/crypto/tink:registry_configuration",
         "@maven//:com_amazonaws_aws_java_sdk_core",
         "@maven//:com_amazonaws_aws_java_sdk_kms",
     ],

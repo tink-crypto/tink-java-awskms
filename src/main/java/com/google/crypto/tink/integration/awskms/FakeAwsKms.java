@@ -24,6 +24,7 @@ import com.amazonaws.services.kms.model.EncryptResult;
 import com.google.crypto.tink.Aead;
 import com.google.crypto.tink.KeyTemplates;
 import com.google.crypto.tink.KeysetHandle;
+import com.google.crypto.tink.RegistryConfiguration;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
@@ -50,7 +51,9 @@ final class FakeAwsKms extends AbstractAWSKMS {
 
   public FakeAwsKms(List<String> validKeyIds) throws GeneralSecurityException {
     for (String keyId : validKeyIds) {
-      Aead aead = KeysetHandle.generateNew(KeyTemplates.get("AES128_GCM")).getPrimitive(Aead.class);
+      Aead aead =
+          KeysetHandle.generateNew(KeyTemplates.get("AES128_GCM"))
+              .getPrimitive(RegistryConfiguration.get(), Aead.class);
       aeads.put(keyId, aead);
     }
   }
