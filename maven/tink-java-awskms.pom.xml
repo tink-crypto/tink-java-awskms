@@ -84,13 +84,13 @@
 
   <properties>
     <java.version>1.8</java.version>
-    <tink.version>1.14.1</tink.version>
-    <aws-java-sdk-core.version>1.12.560</aws-java-sdk-core.version>
-    <aws-java-sdk-kms.version>1.12.560</aws-java-sdk-kms.version>
+    <tink.version>1.15.0</tink.version>
+    <aws-java-sdk-core.version>1.12.779</aws-java-sdk-core.version>
+    <aws-java-sdk-kms.version>1.12.779</aws-java-sdk-kms.version>
     <auto-service-annotations.version>1.1.1</auto-service-annotations.version>
     <jsr305.version>3.0.2</jsr305.version>
-    <error_prone_annotations.version>2.22.0</error_prone_annotations.version>
-    <guava.version>32.0.1-jre</guava.version>
+    <error_prone_annotations.version>2.36.0</error_prone_annotations.version>
+    <guava.version>33.3.1-jre</guava.version>
   </properties>
 
   <dependencies>
