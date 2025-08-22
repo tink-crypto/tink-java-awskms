@@ -25,6 +25,12 @@
 #
 #   CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-java-base:latest" \
 #     sh ./kokoro/gcp_ubuntu/bazel/run_tests.sh
+
+# Generated with openssl rand -hex 10
+echo "==========================================================================="
+echo "Tink Script ID: f4a9b907932581dba7f4 (to quickly find the script from logs)"
+echo "==========================================================================="
+
 set -eEuo pipefail
 
 : "${USE_LOCAL_TINK_JAVA:=true}"
