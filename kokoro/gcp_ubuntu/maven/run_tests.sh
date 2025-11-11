@@ -68,11 +68,9 @@ cat <<'EOF' > _do_run_test.sh
 set -euo pipefail
 
 # Ignore com.google.crypto.tink:tink; this is a Bazel dependency, not a Maven one.
-# TODO: b/332650707 - Re-enable this check once the script is fixed s.t. it
-# works with Bazel 8.
-# ./kokoro/testutils/check_maven_bazel_deps_consistency.sh \
-#   -e "com.google.crypto.tink:tink" "//:tink-awskms" \
-#   "maven/tink-java-awskms.pom.xml"
+./kokoro/testutils/check_maven_bazel_deps_consistency.sh \
+  -e "com.google.crypto.tink:tink" "//:tink-awskms" \
+  "maven/tink-java-awskms.pom.xml"
 
 MAVEN_DEPLOY_LIBRARY_OPTS=()
 if [[ -n "${BAZEL_REMOTE_CACHE_NAME:-}" ]]; then
