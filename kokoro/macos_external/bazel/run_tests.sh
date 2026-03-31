@@ -41,5 +41,7 @@ BAZEL_TEST_ARGS+=( . )
 
 readonly BAZEL_TEST_ARGS
 
+./kokoro/testutils/copy_credentials.sh "testdata" "aws"
+
 source ./kokoro/testutils/update_android_sdk.sh
 ./kokoro/testutils/run_bazel_tests.sh "${BAZEL_TEST_ARGS[@]}"

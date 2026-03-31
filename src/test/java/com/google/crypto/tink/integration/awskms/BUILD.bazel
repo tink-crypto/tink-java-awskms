@@ -41,6 +41,20 @@ java_test(
 )
 
 java_test(
+    name = "AwsKmsIntegrationTest",
+    size = "small",
+    srcs = ["AwsKmsIntegrationTest.java"],
+    data = ["//testdata/aws:credentials"],
+    deps = [
+        "@tink_java//src/main/java/com/google/crypto/tink:aead",
+        "//src/main/java/com/google/crypto/tink/integration/awskms:aws_kms_client",
+        "@tink_java//src/main/java/com/google/crypto/tink/subtle:hex",
+        "@maven//:com_google_truth_truth",
+        "@maven//:junit_junit",
+    ],
+)
+
+java_test(
     name = "FakeAwsKmsTest",
     size = "small",
     srcs = ["FakeAwsKmsTest.java"],

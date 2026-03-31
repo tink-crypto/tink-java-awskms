@@ -49,6 +49,8 @@ if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]] ; then
 fi
 readonly CONTAINER_IMAGE
 
+./kokoro/testutils/copy_credentials.sh "testdata" "aws"
+
 if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
   RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
 fi
