@@ -244,12 +244,12 @@ implements com.google.crypto.tink.KmsClient</pre>
 <td class="colFirst"><code>com.google.crypto.tink.KmsClient</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withCredentials(java.lang.String)">withCredentials</a></span>&#8203;(java.lang.String&nbsp;credentialPath)</code></th>
 <td class="colLast">
-<div class="block">Loads AWS credentials from a properties file.</div>
+<div class="block">Loads AWS credentials from the default profile in the given credential file.</div>
 </td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>com.google.crypto.tink.KmsClient</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withCredentialsProvider(com.amazonaws.auth.AWSCredentialsProvider)">withCredentialsProvider</a></span>&#8203;(com.amazonaws.auth.AWSCredentialsProvider&nbsp;provider)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withCredentialsProvider(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider)">withCredentialsProvider</a></span>&#8203;(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider&nbsp;provider)</code></th>
 <td class="colLast">
 <div class="block">Loads AWS credentials from a provider.</div>
 </td>
@@ -368,10 +368,17 @@ implements com.google.crypto.tink.KmsClient</pre>
 <pre class="methodSignature">@CanIgnoreReturnValue
 public&nbsp;com.google.crypto.tink.KmsClient&nbsp;withCredentials&#8203;(java.lang.String&nbsp;credentialPath)
                                                  throws java.security.GeneralSecurityException</pre>
-<div class="block">Loads AWS credentials from a properties file.
+<div class="block">Loads AWS credentials from the default profile in the given credential file.
 
- <p>The AWS access key ID is expected to be in the <code>accessKey</code> property and the AWS
- secret key is expected to be in the <code>secretKey</code> property.</div>
+ <p>Here is an example of the content of such a file:
+
+ <pre>
+ [default]
+ aws_access_key_id = AKIAIOSFODNN7EXAMPLE
+ aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+ </pre>
+
+ <p>If <code>credentialPath</code> is null, load the credentials from the default credentials.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>withCredentials</code>&nbsp;in interface&nbsp;<code>com.google.crypto.tink.KmsClient</code></dd>
@@ -407,14 +414,14 @@ public&nbsp;com.google.crypto.tink.KmsClient&nbsp;withDefaultCredentials()
 </dl>
 </li>
 </ul>
-<a id="withCredentialsProvider(com.amazonaws.auth.AWSCredentialsProvider)">
+<a id="withCredentialsProvider(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>withCredentialsProvider</h4>
 <pre class="methodSignature">@CanIgnoreReturnValue
-public&nbsp;com.google.crypto.tink.KmsClient&nbsp;withCredentialsProvider&#8203;(com.amazonaws.auth.AWSCredentialsProvider&nbsp;provider)
+public&nbsp;com.google.crypto.tink.KmsClient&nbsp;withCredentialsProvider&#8203;(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider&nbsp;provider)
                                                          throws java.security.GeneralSecurityException</pre>
 <div class="block">Loads AWS credentials from a provider.</div>
 <dl>

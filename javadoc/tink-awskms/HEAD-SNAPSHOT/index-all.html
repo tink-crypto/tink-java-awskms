@@ -105,7 +105,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">A <code>Aead</code> that forwards encryption/decryption requests to a key in <a href="https://aws.amazon.com/kms/">AWS KMS</a>.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="com/google/crypto/tink/integration/awskms/AwsKmsAead.html#%3Cinit%3E(com.amazonaws.services.kms.AWSKMS,java.lang.String)">AwsKmsAead(AWSKMS, String)</a></span> - Constructor for class com.google.crypto.tink.integration.awskms.<a href="com/google/crypto/tink/integration/awskms/AwsKmsAead.html" title="class in com.google.crypto.tink.integration.awskms">AwsKmsAead</a></dt>
+<dt><span class="memberNameLink"><a href="com/google/crypto/tink/integration/awskms/AwsKmsAead.html#%3Cinit%3E(software.amazon.awssdk.services.kms.KmsClient,java.lang.String)">AwsKmsAead(KmsClient, String)</a></span> - Constructor for class com.google.crypto.tink.integration.awskms.<a href="com/google/crypto/tink/integration/awskms/AwsKmsAead.html" title="class in com.google.crypto.tink.integration.awskms">AwsKmsAead</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/crypto/tink/integration/awskms/AwsKmsClient.html" title="class in com.google.crypto.tink.integration.awskms"><span class="typeNameLink">AwsKmsClient</span></a> - Class in <a href="com/google/crypto/tink/integration/awskms/package-summary.html">com.google.crypto.tink.integration.awskms</a></dt>
 <dd>
@@ -181,9 +181,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dl>
 <dt><span class="memberNameLink"><a href="com/google/crypto/tink/integration/awskms/AwsKmsClient.html#withCredentials(java.lang.String)">withCredentials(String)</a></span> - Method in class com.google.crypto.tink.integration.awskms.<a href="com/google/crypto/tink/integration/awskms/AwsKmsClient.html" title="class in com.google.crypto.tink.integration.awskms">AwsKmsClient</a></dt>
 <dd>
-<div class="block">Loads AWS credentials from a properties file.</div>
+<div class="block">Loads AWS credentials from the default profile in the given credential file.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="com/google/crypto/tink/integration/awskms/AwsKmsClient.html#withCredentialsProvider(com.amazonaws.auth.AWSCredentialsProvider)">withCredentialsProvider(AWSCredentialsProvider)</a></span> - Method in class com.google.crypto.tink.integration.awskms.<a href="com/google/crypto/tink/integration/awskms/AwsKmsClient.html" title="class in com.google.crypto.tink.integration.awskms">AwsKmsClient</a></dt>
+<dt><span class="memberNameLink"><a href="com/google/crypto/tink/integration/awskms/AwsKmsClient.html#withCredentialsProvider(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider)">withCredentialsProvider(AwsCredentialsProvider)</a></span> - Method in class com.google.crypto.tink.integration.awskms.<a href="com/google/crypto/tink/integration/awskms/AwsKmsClient.html" title="class in com.google.crypto.tink.integration.awskms">AwsKmsClient</a></dt>
 <dd>
 <div class="block">Loads AWS credentials from a provider.</div>
 </dd>
