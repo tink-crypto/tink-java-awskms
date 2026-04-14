@@ -63,6 +63,8 @@ EOF
   RUN_COMMAND_ARGS+=( -e /tmp/env_variables.txt )
 fi
 
+./kokoro/testutils/copy_credentials.sh "testdata" "aws"
+
 readonly RUN_COMMAND_ARGS
 
 cat <<'EOF' > _do_run_test.sh

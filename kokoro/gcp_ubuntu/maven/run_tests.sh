@@ -81,7 +81,7 @@ readonly MAVEN_DEPLOY_LIBRARY_OPTS
 ./maven/maven_deploy_library.sh "${MAVEN_DEPLOY_LIBRARY_OPTS[@]}" install \
   tink-awskms maven/tink-java-awskms.pom.xml HEAD
 
-readonly AWS_CREDENTIALS="testdata/aws/credentials.cred"
+readonly AWS_CREDENTIALS="testdata/aws/credentials.ini"
 readonly AWS_TEST_KEY_URI="aws-kms://arn:aws:kms:us-east-2:235739564943:key/3ee50705-5a82-4f5b-9753-05c4f473922f"
 
 # Run the local test Maven example.

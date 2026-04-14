@@ -15,36 +15,39 @@
 ////////////////////////////////////////////////////////////////////////////////
 package com.google.crypto.tink.integration.awskms;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.kms.AbstractAWSKMS;
-import com.amazonaws.services.kms.model.DecryptRequest;
-import com.amazonaws.services.kms.model.DecryptResult;
-import com.amazonaws.services.kms.model.EncryptRequest;
-import com.amazonaws.services.kms.model.EncryptResult;
 import com.google.crypto.tink.Aead;
 import com.google.crypto.tink.KeyTemplates;
 import com.google.crypto.tink.KeysetHandle;
 import com.google.crypto.tink.RegistryConfiguration;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DecryptRequest;
+import software.amazon.awssdk.services.kms.model.DecryptResponse;
+import software.amazon.awssdk.services.kms.model.EncryptRequest;
+import software.amazon.awssdk.services.kms.model.EncryptResponse;
+import software.amazon.awssdk.services.kms.model.KmsException;
 
 /**
- * A partial, fake implementation of AWSKMS that only supports encrypt and decrypt.
+ * A partial, fake implementation of {@link KmsClient} that only supports encrypt and decrypt.
  *
  * <p>It creates a new AEAD for every valid key ID. It can encrypt message for these valid key IDs,
  * but fails for all other key IDs. On decrypt, it tries out all its AEADs and returns the plaintext
  * and the key ID of the AEAD that can successfully decrypt it.
  */
-final class FakeAwsKms extends AbstractAWSKMS {
+final class FakeAwsKms implements KmsClient {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
   private final Map<String, Aead> aeads = new HashMap<>();
 
   private static byte[] serializeContext(Map<String, String> encryptionContext) {
+    if (encryptionContext == null) {
+      return new byte[0];
+    }
     TreeMap<String, String> ordered = new TreeMap<>(encryptionContext);
     return ordered.toString().getBytes(UTF_8);
   }
@@ -59,41 +62,54 @@ final class FakeAwsKms extends AbstractAWSKMS {
   }
 
   @Override
-  public EncryptResult encrypt(EncryptRequest request) {
-    if (!aeads.containsKey(request.getKeyId())) {
-      throw new AmazonServiceException(
-          "Unknown key ID : " + request.getKeyId() + " is not in " + aeads.keySet());
+  public EncryptResponse encrypt(EncryptRequest request) {
+    if (!aeads.containsKey(request.keyId())) {
+      throw KmsException.builder()
+          .message("Unknown key ID : " + request.keyId() + " is not in " + aeads.keySet())
+          .build();
     }
     try {
-      Aead aead = aeads.get(request.getKeyId());
+      Aead aead = aeads.get(request.keyId());
       byte[] ciphertext =
           aead.encrypt(
-              request.getPlaintext().array(), serializeContext(request.getEncryptionContext()));
-      return new EncryptResult()
-          .withKeyId(request.getKeyId())
-          .withCiphertextBlob(ByteBuffer.wrap(ciphertext));
+              request.plaintext().asByteArray(), serializeContext(request.encryptionContext()));
+      return EncryptResponse.builder()
+          .keyId(request.keyId())
+          .ciphertextBlob(SdkBytes.fromByteArray(ciphertext))
+          .build();
     } catch (GeneralSecurityException e) {
-      throw new AmazonServiceException(e.getMessage());
+      throw KmsException.builder().message(e.getMessage()).cause(e).build();
     }
   }
 
   @Override
-  public DecryptResult decrypt(DecryptRequest request) {
+  public DecryptResponse decrypt(DecryptRequest request) {
     for (Map.Entry<String, Aead> entry : aeads.entrySet()) {
       try {
         byte[] plaintext =
             entry
                 .getValue()
                 .decrypt(
-                    request.getCiphertextBlob().array(),
-                    serializeContext(request.getEncryptionContext()));
-        return new DecryptResult()
-            .withKeyId(entry.getKey())
-            .withPlaintext(ByteBuffer.wrap(plaintext));
+                    request.ciphertextBlob().asByteArray(),
+                    serializeContext(request.encryptionContext()));
+        return DecryptResponse.builder()
+            .keyId(entry.getKey())
+            .plaintext(SdkBytes.fromByteArray(plaintext))
+            .build();
       } catch (GeneralSecurityException e) {
         // try next key
       }
     }
-    throw new AmazonServiceException("unable to decrypt");
+    throw KmsException.builder().message("unable to decrypt").build();
+  }
+
+  @Override
+  public String serviceName() {
+    return "kms";
+  }
+
+  @Override
+  public void close() {
+    // Do nothing
   }
 }

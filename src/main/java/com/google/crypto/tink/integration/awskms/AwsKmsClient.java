@@ -16,24 +16,26 @@
 
 package com.google.crypto.tink.integration.awskms;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.auth.PropertiesFileCredentialsProvider;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import com.google.auto.service.AutoService;
 import com.google.common.base.Splitter;
 import com.google.crypto.tink.Aead;
 import com.google.crypto.tink.KmsClient;
 import com.google.crypto.tink.KmsClients;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.profiles.ProfileFile;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kms.KmsClientBuilder;
 
 /**
  * An implementation of {@link KmsClient} for <a href="https://aws.amazon.com/kms/">AWS KMS</a>.
@@ -45,9 +47,9 @@ public final class AwsKmsClient implements KmsClient {
   /** The prefix of all keys stored in AWS KMS. */
   public static final String PREFIX = "aws-kms://";
 
-  @Nullable private AWSKMS awsKms;
+  @Nullable private software.amazon.awssdk.services.kms.KmsClient awsKms;
   @Nullable private String keyUri;
-  @Nullable private AWSCredentialsProvider provider;
+  @Nullable private AwsCredentialsProvider provider;
 
   /**
    * Constructs a generic AwsKmsClient that is not bound to any specific key.
@@ -82,10 +84,17 @@ public final class AwsKmsClient implements KmsClient {
   }
 
   /**
-   * Loads AWS credentials from a properties file.
+   * Loads AWS credentials from the default profile in the given credential file.
    *
-   * <p>The AWS access key ID is expected to be in the <code>accessKey</code> property and the AWS
-   * secret key is expected to be in the <code>secretKey</code> property.
+   * <p>Here is an example of the content of such a file:
+   *
+   * <pre>
+   * [default]
+   * aws_access_key_id = AKIAIOSFODNN7EXAMPLE
+   * aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+   * </pre>
+   *
+   * <p>If {@code credentialPath} is null, load the credentials from the default credentials.
    *
    * @throws GeneralSecurityException if the client initialization fails
    */
@@ -96,9 +105,23 @@ public final class AwsKmsClient implements KmsClient {
       if (credentialPath == null) {
         return withDefaultCredentials();
       }
-      return withCredentialsProvider(new PropertiesFileCredentialsProvider(credentialPath));
-    } catch (AmazonServiceException e) {
-      throw new GeneralSecurityException("cannot load credentials", e);
+      ProfileCredentialsProvider credentialsProvider =
+          ProfileCredentialsProvider.builder()
+              .profileFile(
+                  ProfileFile.builder()
+                      .content(Paths.get(credentialPath))
+                      .type(ProfileFile.Type.CREDENTIALS)
+                      .build())
+              .profileName("default")
+              .build();
+      // Call resolveCredentials to verify that the credentials are valid and can be loaded.
+      AwsCredentials unused = credentialsProvider.resolveCredentials();
+      return withCredentialsProvider(credentialsProvider);
+    } catch (SdkClientException e) {
+      throw new GeneralSecurityException(
+          "Cannot load credentials. Note that the AWS SKD V2 does not support the old format"
+              + " anymore. You may need to update your credentials file.",
+          e);
     }
   }
 
@@ -120,26 +143,26 @@ public final class AwsKmsClient implements KmsClient {
   @CanIgnoreReturnValue
   public KmsClient withDefaultCredentials() throws GeneralSecurityException {
     try {
-      return withCredentialsProvider(new DefaultAWSCredentialsProviderChain());
-    } catch (AmazonServiceException e) {
+      return withCredentialsProvider(DefaultCredentialsProvider.create());
+    } catch (SdkClientException e) {
       throw new GeneralSecurityException("cannot load default credentials", e);
     }
   }
 
   /** Loads AWS credentials from a provider. */
   @CanIgnoreReturnValue
-  public KmsClient withCredentialsProvider(AWSCredentialsProvider provider)
+  public KmsClient withCredentialsProvider(AwsCredentialsProvider provider)
       throws GeneralSecurityException {
     this.provider = provider;
     return this;
   }
 
   /**
-   * Specifies the {@link com.amazonaws.services.kms.AWSKMS} object to be used. Only used for
-   * testing.
+   * Specifies the {@link software.amazon.awssdk.services.kms.KmsClient} object to be used. Only
+   * used for testing.
    */
   @CanIgnoreReturnValue
-  KmsClient withAwsKms(@Nullable AWSKMS awsKms) {
+  KmsClient withAwsKms(@Nullable software.amazon.awssdk.services.kms.KmsClient awsKms) {
     this.awsKms = awsKms;
     return this;
   }
@@ -162,21 +185,21 @@ public final class AwsKmsClient implements KmsClient {
 
     try {
       String keyId = removePrefix(PREFIX, uri);
-      AWSKMS client = awsKms;
+      software.amazon.awssdk.services.kms.KmsClient client = awsKms;
       List<String> tokens = Splitter.on(':').splitToList(keyId);
       if (tokens.size() < 4) {
         throw new IllegalArgumentException("invalid key URI");
       }
       String regionName = tokens.get(3);
       if (client == null) {
-        client =
-            AWSKMSClientBuilder.standard()
-                .withCredentials(provider)
-                .withRegion(Regions.fromName(regionName))
-                .build();
+        KmsClientBuilder builder = software.amazon.awssdk.services.kms.KmsClient.builder();
+        if (provider != null) {
+          builder.credentialsProvider(provider);
+        }
+        client = builder.region(Region.of(regionName)).build();
       }
       return new AwsKmsAead(client, keyId);
-    } catch (AmazonServiceException e) {
+    } catch (SdkClientException e) {
       throw new GeneralSecurityException("cannot load credentials from provider", e);
     }
   }
@@ -206,7 +229,9 @@ public final class AwsKmsClient implements KmsClient {
    * for testing.
    */
   static void registerWithAwsKms(
-      Optional<String> keyUri, Optional<String> credentialPath, @Nullable AWSKMS awsKms)
+      Optional<String> keyUri,
+      Optional<String> credentialPath,
+      @Nullable software.amazon.awssdk.services.kms.KmsClient awsKms)
       throws GeneralSecurityException {
     AwsKmsClient client;
     if (keyUri.isPresent()) {

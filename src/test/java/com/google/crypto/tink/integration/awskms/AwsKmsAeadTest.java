@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
-import com.amazonaws.services.kms.AWSKMS;
 import com.google.crypto.tink.Aead;
 import com.google.crypto.tink.aead.AeadConfig;
 import com.google.crypto.tink.subtle.Random;
@@ -29,6 +28,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import software.amazon.awssdk.services.kms.KmsClient;
 
 /** Tests for AwsKmsAead. */
 @RunWith(JUnit4.class)
@@ -44,7 +44,7 @@ public class AwsKmsAeadTest {
 
   @Test
   public void testEncryptDecryptWithKnownKeyArn_success() throws Exception {
-    AWSKMS kms = new FakeAwsKms(asList(KEY_ARN, KEY_ARN_DIFFERENT));
+    KmsClient kms = new FakeAwsKms(asList(KEY_ARN, KEY_ARN_DIFFERENT));
 
     Aead aead = new AwsKmsAead(kms, KEY_ARN);
     byte[] aad = Random.randBytes(20);
@@ -56,7 +56,7 @@ public class AwsKmsAeadTest {
 
   @Test
   public void testEncryptWithUnknownKeyArn_fails() throws Exception {
-    AWSKMS kmsThatDoentKnowKeyArn = new FakeAwsKms(asList(KEY_ARN_DIFFERENT));
+    KmsClient kmsThatDoentKnowKeyArn = new FakeAwsKms(asList(KEY_ARN_DIFFERENT));
 
     Aead aead = new AwsKmsAead(kmsThatDoentKnowKeyArn, KEY_ARN);
     byte[] aad = Random.randBytes(20);
@@ -66,7 +66,7 @@ public class AwsKmsAeadTest {
 
   @Test
   public void testDecryptWithInvalidKeyArn_fails() throws Exception {
-    AWSKMS kms = new FakeAwsKms(asList(KEY_ARN));
+    KmsClient kms = new FakeAwsKms(asList(KEY_ARN));
     Aead aead = new AwsKmsAead(kms, KEY_ARN);
     byte[] aad = Random.randBytes(20);
     byte[] invalidCiphertext = Random.randBytes(2);
@@ -75,7 +75,7 @@ public class AwsKmsAeadTest {
 
   @Test
   public void testDecryptWithDifferentKeyArn_fails() throws Exception {
-    AWSKMS kms = new FakeAwsKms(asList(KEY_ARN, KEY_ARN_DIFFERENT));
+    KmsClient kms = new FakeAwsKms(asList(KEY_ARN, KEY_ARN_DIFFERENT));
 
     Aead aead = new AwsKmsAead(kms, KEY_ARN);
     byte[] aad = Random.randBytes(20);
@@ -91,7 +91,7 @@ public class AwsKmsAeadTest {
 
   @Test
   public void testDecryptWithAliasKeyArn_success() throws Exception {
-    AWSKMS kms = new FakeAwsKms(asList(KEY_ARN));
+    KmsClient kms = new FakeAwsKms(asList(KEY_ARN));
 
     byte[] aad = Random.randBytes(20);
     byte[] message = Random.randBytes(20);
@@ -108,7 +108,7 @@ public class AwsKmsAeadTest {
 
   @Test
   public void testDecryptWithInvalidKeyArn_success() throws Exception {
-    AWSKMS kms = new FakeAwsKms(asList(KEY_ARN));
+    KmsClient kms = new FakeAwsKms(asList(KEY_ARN));
 
     byte[] aad = Random.randBytes(20);
     byte[] message = Random.randBytes(20);

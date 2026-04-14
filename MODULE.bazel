@@ -36,8 +36,6 @@ maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
     artifacts = [
         # go/keep-sorted start
-        "com.amazonaws:aws-java-sdk-core:1.12.779",
-        "com.amazonaws:aws-java-sdk-kms:1.12.779",
         "com.google.auto.service:auto-service-annotations:1.1.1",
         "com.google.auto.service:auto-service:1.1.1",
         "com.google.auto:auto-common:1.2.2",
@@ -49,13 +47,19 @@ maven.install(
         "org.ow2.asm:asm-commons:9.7.1",
         "org.ow2.asm:asm:9.7.1",
         "org.pantsbuild:jarjar:1.7.2",
+        "software.amazon.awssdk:auth:2.27.14",
+        "software.amazon.awssdk:kms:2.27.14",
+        "software.amazon.awssdk:profiles:2.27.14",
+        "software.amazon.awssdk:regions:2.27.14",
+        "software.amazon.awssdk:sdk-core:2.27.14",
+        "software.amazon.awssdk:utils:2.27.14",
         # go/keep-sorted end
     ],
     repositories = [
         "https://maven.google.com",
         "https://repo1.maven.org/maven2",
     ],
-    known_contributing_modules = ["bazel_worker_java", "protobuf", "tink_java", "tink_java_awskms"]
+    known_contributing_modules = ["bazel_worker_java", "protobuf", "tink_java", "tink_java_awskms"],
 )
 
 use_repo(maven, "maven")

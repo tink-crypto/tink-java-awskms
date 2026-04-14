@@ -16,17 +16,21 @@
 
 package com.google.crypto.tink.integration.awskms;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.model.DecryptRequest;
-import com.amazonaws.services.kms.model.DecryptResult;
-import com.amazonaws.services.kms.model.EncryptRequest;
-import com.amazonaws.util.BinaryUtils;
 import com.google.common.base.Splitter;
 import com.google.crypto.tink.Aead;
-import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DecryptRequest;
+import software.amazon.awssdk.services.kms.model.DecryptResponse;
+import software.amazon.awssdk.services.kms.model.EncryptRequest;
+import software.amazon.awssdk.services.kms.model.EncryptResponse;
+import software.amazon.awssdk.services.kms.model.KmsException;
+import software.amazon.awssdk.utils.BinaryUtils;
 
 /**
  * A {@link Aead} that forwards encryption/decryption requests to a key in <a
@@ -37,12 +41,12 @@ import java.util.List;
 public final class AwsKmsAead implements Aead {
 
   /** This client knows how to talk to AWS KMS. */
-  private final AWSKMS kmsClient;
+  private final KmsClient kmsClient;
 
   // The location of a crypto key in AWS KMS, without the aws-kms:// prefix.
   private final String keyArn;
 
-  public AwsKmsAead(AWSKMS kmsClient, String keyArn) {
+  public AwsKmsAead(KmsClient kmsClient, String keyArn) {
     this.kmsClient = kmsClient;
     this.keyArn = keyArn;
   }
@@ -51,13 +55,17 @@ public final class AwsKmsAead implements Aead {
   public byte[] encrypt(final byte[] plaintext, final byte[] associatedData)
       throws GeneralSecurityException {
     try {
-      EncryptRequest req =
-          new EncryptRequest().withKeyId(keyArn).withPlaintext(ByteBuffer.wrap(plaintext));
+      EncryptRequest.Builder reqBuilder =
+          EncryptRequest.builder().keyId(keyArn).plaintext(SdkBytes.fromByteArray(plaintext));
+
       if (associatedData != null && associatedData.length != 0) {
-        req = req.addEncryptionContextEntry("associatedData", BinaryUtils.toHex(associatedData));
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("associatedData", BinaryUtils.toHex(associatedData));
+        reqBuilder.encryptionContext(encryptionContext);
       }
-      return kmsClient.encrypt(req).getCiphertextBlob().array();
-    } catch (AmazonServiceException e) {
+      EncryptResponse response = kmsClient.encrypt(reqBuilder.build());
+      return response.ciphertextBlob().asByteArray();
+    } catch (SdkClientException | KmsException e) {
       throw new GeneralSecurityException("encryption failed", e);
     }
   }
@@ -66,24 +74,26 @@ public final class AwsKmsAead implements Aead {
   public byte[] decrypt(final byte[] ciphertext, final byte[] associatedData)
       throws GeneralSecurityException {
     try {
-      DecryptRequest req =
-          new DecryptRequest().withKeyId(keyArn)
-              .withCiphertextBlob(ByteBuffer.wrap(ciphertext));
+      DecryptRequest.Builder reqBuilder =
+          DecryptRequest.builder().keyId(keyArn).ciphertextBlob(SdkBytes.fromByteArray(ciphertext));
+
       if (associatedData != null && associatedData.length != 0) {
-        req = req.addEncryptionContextEntry("associatedData", BinaryUtils.toHex(associatedData));
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("associatedData", BinaryUtils.toHex(associatedData));
+        reqBuilder.encryptionContext(encryptionContext);
       }
-      DecryptResult result = kmsClient.decrypt(req);
+      DecryptResponse result = kmsClient.decrypt(reqBuilder.build());
       // In AwsKmsAead.decrypt() it is important to check the returned KeyId against the one
       // previously configured. If we don't do this, the possibility exists for the ciphertext to
       // be replaced by one under a key we don't control/expect, but do have decrypt permissions
       // on.
       // The check is disabled if keyARN is not in key ARN format.
       // See https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#key-id.
-      if (isKeyArnFormat(keyArn) && !result.getKeyId().equals(keyArn)) {
+      if (isKeyArnFormat(keyArn) && !result.keyId().equals(keyArn)) {
         throw new GeneralSecurityException("decryption failed: wrong key id");
       }
-      return result.getPlaintext().array();
-    } catch (AmazonServiceException e) {
+      return result.plaintext().asByteArray();
+    } catch (SdkClientException | KmsException e) {
       throw new GeneralSecurityException("decryption failed", e);
     }
   }

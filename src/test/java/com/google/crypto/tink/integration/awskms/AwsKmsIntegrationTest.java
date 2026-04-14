@@ -34,7 +34,7 @@ public class AwsKmsIntegrationTest {
   // This integration test can be successfully executed when this file contains credentials for an
   // AWS user which has access to the keys specified in {@link #AWS_KMS_TEST_KEY_URI} and
   // {@link #AWS_KMS_TEST_KEY_URI_2}.
-  private static final String AWS_CREDENTIALS_FILE = "testdata/aws/credentials.cred";
+  private static final String AWS_CREDENTIALS_FILE = "testdata/aws/credentials.ini";
 
   // A valid AWS KMS AEAD key URI.
   private static final String AWS_KMS_TEST_KEY_URI =
@@ -123,5 +123,15 @@ public class AwsKmsIntegrationTest {
             "01020200787a5511910e44ea9520df697fb6150f6261b59cee44cc846915252c083f03aad00168fe1a9ca1a6af5d571c1aa6e0afcba000000067306506092a864886f70d010706a0583056020100305106092a864886f70d010701301e060960864801650304012e3011040cb085893bc4757850d73a68ca02011080241fcff6b61f510d20c236ee7292b626e35a22b615e57326911daafaa399525431748d3e24");
     byte[] decrypted = aead.decrypt(ciphertextTestVector, "associatedData".getBytes(UTF_8));
     assertThat(decrypted).isEqualTo("plaintext".getBytes(UTF_8));
+  }
+
+  @Test
+  public void withCredentials_oldFormat_throwsExceptionWithMessageAboutUnsupportedFormat()
+      throws Exception {
+    GeneralSecurityException exception =
+        assertThrows(
+        GeneralSecurityException.class,
+        () -> new AwsKmsClient().withCredentials("testdata/aws/credentials.cred"));
+    assertThat(exception).hasMessageThat().contains("AWS SKD V2 does not support the old format");
   }
 }

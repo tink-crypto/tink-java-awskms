@@ -20,20 +20,20 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.model.DecryptRequest;
-import com.amazonaws.services.kms.model.DecryptResult;
-import com.amazonaws.services.kms.model.EncryptRequest;
-import com.amazonaws.services.kms.model.EncryptResult;
 import com.google.crypto.tink.aead.AeadConfig;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DecryptRequest;
+import software.amazon.awssdk.services.kms.model.DecryptResponse;
+import software.amazon.awssdk.services.kms.model.EncryptRequest;
+import software.amazon.awssdk.services.kms.model.EncryptResponse;
+import software.amazon.awssdk.services.kms.model.KmsException;
 
 @RunWith(JUnit4.class)
 public final class FakeAwsKmsTest {
@@ -49,7 +49,7 @@ public final class FakeAwsKmsTest {
 
   @Test
   public void testEncryptDecryptWithValidKeyId_success() throws Exception {
-    AWSKMS kms = new FakeAwsKms(asList(KEY_ID));
+    KmsClient kms = new FakeAwsKms(asList(KEY_ID));
 
     byte[] plaintext = "plaintext".getBytes(UTF_8);
 
@@ -57,26 +57,28 @@ public final class FakeAwsKmsTest {
     context.put("name", "value");
 
     EncryptRequest encRequest =
-        new EncryptRequest()
-            .withKeyId(KEY_ID)
-            .withPlaintext(ByteBuffer.wrap(plaintext))
-            .withEncryptionContext(context);
-    EncryptResult encResult = kms.encrypt(encRequest);
-    assertThat(encResult.getKeyId()).isEqualTo(KEY_ID);
+        EncryptRequest.builder()
+            .keyId(KEY_ID)
+            .plaintext(SdkBytes.fromByteArray(plaintext))
+            .encryptionContext(context)
+            .build();
+    EncryptResponse encResult = kms.encrypt(encRequest);
+    assertThat(encResult.keyId()).isEqualTo(KEY_ID);
 
     DecryptRequest decRequest =
-        new DecryptRequest()
-            .withCiphertextBlob(ByteBuffer.wrap(encResult.getCiphertextBlob().array()))
-            .withEncryptionContext(context);
+        DecryptRequest.builder()
+            .ciphertextBlob(encResult.ciphertextBlob())
+            .encryptionContext(context)
+            .build();
 
-    DecryptResult decResult = kms.decrypt(decRequest);
-    assertThat(decResult.getKeyId()).isEqualTo(KEY_ID);
-    assertThat(decResult.getPlaintext().array()).isEqualTo(plaintext);
+    DecryptResponse decResult = kms.decrypt(decRequest);
+    assertThat(decResult.keyId()).isEqualTo(KEY_ID);
+    assertThat(decResult.plaintext().asByteArray()).isEqualTo(plaintext);
   }
 
   @Test
   public void testEncryptWithInvalidKeyId_fails() throws Exception {
-    AWSKMS kms = new FakeAwsKms(asList(KEY_ID));
+    KmsClient kms = new FakeAwsKms(asList(KEY_ID));
 
     byte[] plaintext = "plaintext".getBytes(UTF_8);
 
@@ -84,16 +86,17 @@ public final class FakeAwsKmsTest {
     context.put("name", "value");
 
     EncryptRequest encRequestWithDifferentKeyArn =
-        new EncryptRequest()
-            .withKeyId(KEY_ID_2)
-            .withPlaintext(ByteBuffer.wrap(plaintext))
-            .withEncryptionContext(context);
-    assertThrows(AmazonServiceException.class, () -> kms.encrypt(encRequestWithDifferentKeyArn));
+        EncryptRequest.builder()
+            .keyId(KEY_ID_2)
+            .plaintext(SdkBytes.fromByteArray(plaintext))
+            .encryptionContext(context)
+            .build();
+    assertThrows(KmsException.class, () -> kms.encrypt(encRequestWithDifferentKeyArn));
   }
 
   @Test
   public void testDecryptWithInvalidKeyId_fails() throws Exception {
-    AWSKMS kms = new FakeAwsKms(asList(KEY_ID));
+    KmsClient kms = new FakeAwsKms(asList(KEY_ID));
 
     byte[] invalidCiphertext = "invalid".getBytes(UTF_8);
 
@@ -101,16 +104,17 @@ public final class FakeAwsKmsTest {
     context.put("name", "value");
 
     DecryptRequest decRequestWithInvalidCiphertext =
-        new DecryptRequest()
-            .withCiphertextBlob(ByteBuffer.wrap(invalidCiphertext))
-            .withEncryptionContext(context);
-    assertThrows(AmazonServiceException.class, () -> kms.decrypt(decRequestWithInvalidCiphertext));
+        DecryptRequest.builder()
+            .ciphertextBlob(SdkBytes.fromByteArray(invalidCiphertext))
+            .encryptionContext(context)
+            .build();
+    assertThrows(KmsException.class, () -> kms.decrypt(decRequestWithInvalidCiphertext));
   }
 
 
   @Test
   public void testEncryptDecryptWithTwoValidKeyId_success() throws Exception {
-    AWSKMS kms = new FakeAwsKms(asList(KEY_ID, KEY_ID_2));
+    KmsClient kms = new FakeAwsKms(asList(KEY_ID, KEY_ID_2));
 
     byte[] plaintext = "plaintext".getBytes(UTF_8);
     byte[] plaintext2 = "plaintext2".getBytes(UTF_8);
@@ -119,38 +123,42 @@ public final class FakeAwsKmsTest {
     context.put("name", "value");
 
     EncryptRequest encRequest =
-        new EncryptRequest()
-            .withKeyId(KEY_ID)
-            .withPlaintext(ByteBuffer.wrap(plaintext))
-            .withEncryptionContext(context);
-    EncryptResult encResult = kms.encrypt(encRequest);
-    assertThat(encResult.getKeyId()).isEqualTo(KEY_ID);
+        EncryptRequest.builder()
+            .keyId(KEY_ID)
+            .plaintext(SdkBytes.fromByteArray(plaintext))
+            .encryptionContext(context)
+            .build();
+    EncryptResponse encResult = kms.encrypt(encRequest);
+    assertThat(encResult.keyId()).isEqualTo(KEY_ID);
 
     EncryptRequest encRequest2 =
-        new EncryptRequest()
-            .withKeyId(KEY_ID_2)
-            .withPlaintext(ByteBuffer.wrap(plaintext2))
-            .withEncryptionContext(context);
-    EncryptResult encResult2 = kms.encrypt(encRequest2);
-    assertThat(encResult2.getKeyId()).isEqualTo(KEY_ID_2);
+        EncryptRequest.builder()
+            .keyId(KEY_ID_2)
+            .plaintext(SdkBytes.fromByteArray(plaintext2))
+            .encryptionContext(context)
+            .build();
+    EncryptResponse encResult2 = kms.encrypt(encRequest2);
+    assertThat(encResult2.keyId()).isEqualTo(KEY_ID_2);
 
     DecryptRequest decRequest =
-        new DecryptRequest()
-            .withCiphertextBlob(ByteBuffer.wrap(encResult.getCiphertextBlob().array()))
-            .withEncryptionContext(context);
+        DecryptRequest.builder()
+            .ciphertextBlob(encResult.ciphertextBlob())
+            .encryptionContext(context)
+            .build();
 
-    DecryptResult decResult = kms.decrypt(decRequest);
-    assertThat(decResult.getKeyId()).isEqualTo(KEY_ID);
-    assertThat(decResult.getPlaintext().array()).isEqualTo(plaintext);
+    DecryptResponse decResult = kms.decrypt(decRequest);
+    assertThat(decResult.keyId()).isEqualTo(KEY_ID);
+    assertThat(decResult.plaintext().asByteArray()).isEqualTo(plaintext);
 
     DecryptRequest decRequest2 =
-        new DecryptRequest()
-            .withCiphertextBlob(ByteBuffer.wrap(encResult2.getCiphertextBlob().array()))
-            .withEncryptionContext(context);
+        DecryptRequest.builder()
+            .ciphertextBlob(encResult2.ciphertextBlob())
+            .encryptionContext(context)
+            .build();
 
-    DecryptResult decResult2 = kms.decrypt(decRequest2);
-    assertThat(decResult2.getKeyId()).isEqualTo(KEY_ID_2);
-    assertThat(decResult2.getPlaintext().array()).isEqualTo(plaintext2);
+    DecryptResponse decResult2 = kms.decrypt(decRequest2);
+    assertThat(decResult2.keyId()).isEqualTo(KEY_ID_2);
+    assertThat(decResult2.plaintext().asByteArray()).isEqualTo(plaintext2);
   }
 
 }
