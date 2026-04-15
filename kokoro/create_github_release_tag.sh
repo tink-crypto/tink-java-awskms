@@ -14,7 +14,12 @@
 # limitations under the License.
 ################################################################################
 
-set -euo pipefail
+# Generated with openssl rand -hex 10
+echo "================================================================================"
+echo "Tink Script ID: 34ae0a74a062fc33df4c (to quickly find the script from logs)"
+echo "================================================================================"
+
+set -eEuo pipefail
 
 # Fail if RELEASE_VERSION is not set.
 if [[ -z "${RELEASE_VERSION:-}" ]]; then
