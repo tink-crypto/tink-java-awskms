@@ -29,7 +29,8 @@ java_test(
 
 java_test(
     name = "AwsKmsIntegrationTest",
-    size = "small",
+    size = "medium",
+    tags = ["requires-network"],
     srcs = ["AwsKmsIntegrationTest.java"],
     data = ["//testdata/aws:credentials"],
     deps = [
