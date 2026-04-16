@@ -26,7 +26,6 @@ import com.google.crypto.tink.KeyTemplate;
 import com.google.crypto.tink.KeyTemplates;
 import com.google.crypto.tink.KeysetHandle;
 import com.google.crypto.tink.KmsClient;
-import com.google.crypto.tink.KmsClientsTestUtil;
 import com.google.crypto.tink.RegistryConfiguration;
 import com.google.crypto.tink.aead.AeadConfig;
 import com.google.crypto.tink.aead.KmsAeadKeyManager;
@@ -35,7 +34,6 @@ import com.google.crypto.tink.aead.KmsEnvelopeAeadKeyManager;
 import com.google.crypto.tink.aead.PredefinedAeadParameters;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,11 +46,6 @@ public final class AwsKmsClientTest {
   @BeforeClass
   public static void setUpClass() throws Exception {
     AeadConfig.register();
-  }
-
-  @Before
-  public void setUp() {
-    KmsClientsTestUtil.reset();
   }
 
   @Test
@@ -159,6 +152,8 @@ public final class AwsKmsClientTest {
     String kekUri2 =
         "aws-kms://arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890xy";
 
+    // This has a global side effect: it registers the client with the Tink global registry.
+    // But that's fine because we only use these key URIs in this test.
     AwsKmsClient.registerWithAwsKms(
         Optional.of(kekUri), Optional.empty(), new FakeAwsKms(asList(kekId, kekId2)));
 
@@ -179,14 +174,17 @@ public final class AwsKmsClientTest {
 
   @Test
   public void registerTwoBoundWithFakeAwsKms_kmsAeadWorks() throws Exception {
-    String kekId = "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab";
-    String kekId2 = "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890xy";
+    String kekId = "arn:aws:kms:us-west-2:222233334444:key/1234abcd-12ab-34cd-56ef-1234567890ab";
+    String kekId2 = "arn:aws:kms:us-west-2:222233334444:key/1234abcd-12ab-34cd-56ef-1234567890xy";
     String kekUri =
-        "aws-kms://arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab";
+        "aws-kms://arn:aws:kms:us-west-2:222233334444:key/1234abcd-12ab-34cd-56ef-1234567890ab";
     String kekUri2 =
-        "aws-kms://arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890xy";
+        "aws-kms://arn:aws:kms:us-west-2:222233334444:key/1234abcd-12ab-34cd-56ef-1234567890xy";
 
     FakeAwsKms fakeKms = new FakeAwsKms(asList(kekId, kekId2));
+
+    // This has a global side effect: it registers the client with the Tink global registry.
+    // But that's fine because we only use these key URIs in this test.
     AwsKmsClient.registerWithAwsKms(Optional.of(kekUri), Optional.empty(), fakeKms);
     AwsKmsClient.registerWithAwsKms(Optional.of(kekUri2), Optional.empty(), fakeKms);
 
