@@ -115,4 +115,3 @@ curl --request POST \
   --header "Authorization: Bearer ${BASE64TOKEN}" \
   --form bundle=@kokoro_upload_dir/release/tink-awskms-release-bundle.zip \
   https://central.sonatype.com/api/v1/publisher/upload
-done
