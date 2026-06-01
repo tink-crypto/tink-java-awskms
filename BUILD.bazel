@@ -1,7 +1,7 @@
 # Build file for generating the tink-awskms Maven artifact.
 
-load("//tools:module_version.bzl", "get_module_version")
 load("//tools:gen_maven_jar_rules.bzl", "gen_maven_jar_rules", "maven_bundle")
+load("//tools:module_version.bzl", "get_module_version")
 
 package(default_visibility = ["//visibility:public"])
 
