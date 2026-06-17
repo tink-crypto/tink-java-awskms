@@ -23,12 +23,14 @@ bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_android", version = "0.6.6", repo_name = "build_bazel_rules_android")
 bazel_dep(name = "platforms", version = "1.0.0")
 
-bazel_dep(name = "tink_java")
+_TINK_JAVA_VERSION = "1.21.0"
+
+bazel_dep(name = "tink_java", dev_dependency = True)
 archive_override(
     module_name = "tink_java",
     integrity = "sha256-3cJVMyGLIAsKjxVAEVDBv+eU2moySVy733sgnQYXAk0=",
-    strip_prefix = "tink-java-1.21.0",
-    urls = ["https://github.com/tink-crypto/tink-java/archive/refs/tags/v1.21.0.tar.gz"],
+    strip_prefix = "tink-java-%s" % _TINK_JAVA_VERSION,
+    urls = ["https://github.com/tink-crypto/tink-java/archive/refs/tags/v%s.tar.gz" % _TINK_JAVA_VERSION],
 )
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
@@ -40,7 +42,7 @@ maven.install(
         "com.google.auto.service:auto-service:1.1.1",
         "com.google.auto:auto-common:1.2.2",
         "com.google.code.findbugs:jsr305:3.0.2",
-        "com.google.crypto.tink:tink:1.21.0",
+        "com.google.crypto.tink:tink:%s" % _TINK_JAVA_VERSION,
         "com.google.errorprone:error_prone_annotations:2.36.0",
         "com.google.guava:guava:33.3.1-jre",
         "com.google.truth:truth:1.4.4",
