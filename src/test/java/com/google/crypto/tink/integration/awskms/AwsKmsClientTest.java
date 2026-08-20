@@ -35,11 +35,18 @@ import com.google.crypto.tink.aead.KmsEnvelopeAeadKeyManager;
 import com.google.crypto.tink.aead.PredefinedAeadParameters;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.IdentityProvider;
+import software.amazon.awssdk.identity.spi.ResolveIdentityRequest;
 
 /** Tests for AwsKmsClient. */
 @RunWith(JUnit4.class)
@@ -246,6 +253,61 @@ public final class AwsKmsClientTest {
     Aead aliasKmsAead = client.getAead(aliasUri);
     byte[] decrypted = aliasKmsAead.decrypt(ciphertext, associatedData);
     assertThat(decrypted).isEqualTo(plaintext);
+  }
+
+  @Test
+  public void withCredentialsProvider_acceptsAwsCredentialsProviderLambda() throws Exception {
+    String keyId = "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab";
+    String keyUri = "aws-kms://" + keyId;
+    AwsKmsClient client = new AwsKmsClient(keyUri);
+
+    // Passing the lambda directly -- rather than through an AwsCredentialsProvider-typed local --
+    // forces the compiler to pick an overload by matching the lambda's shape (0 args) against the
+    // candidates' functional methods. This only compiles because the AwsCredentialsProvider
+    // overload (resolveCredentials(), 0 args) exists; it would fail to compile against only the
+    // IdentityProvider overload (resolveIdentity(request), 1 arg), so this guards the
+    // AwsCredentialsProvider overload's continued existence, not just its type's assignability.
+    // withAwsKms/encryption aren't needed here: the compile-time overload check is the whole
+    // point, and this class's own field assignment is all there is to verify at runtime.
+    assertThat(
+            client.withCredentialsProvider(
+                () -> AwsBasicCredentials.create("fake-access-key-id", "fake-secret-access-key")))
+        .isSameInstanceAs(client);
+  }
+
+  @Test
+  public void withCredentialsProvider_acceptsPlainIdentityProvider() throws Exception {
+    String keyId = "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab";
+    String keyUri = "aws-kms://" + keyId;
+    // No withAwsKms() override here: the point is to verify this IdentityProvider is actually
+    // forwarded to the real KmsClientBuilder, which withAwsKms would bypass entirely. Failing
+    // resolveIdentity immediately keeps this offline and fast -- credential resolution happens
+    // before any request reaches AWS, so no real network call is ever attempted.
+    AtomicBoolean resolveCalled = new AtomicBoolean();
+    IdentityProvider<AwsCredentialsIdentity> identityProvider =
+        new IdentityProvider<AwsCredentialsIdentity>() {
+          @Override
+          public Class<AwsCredentialsIdentity> identityType() {
+            return AwsCredentialsIdentity.class;
+          }
+
+          @Override
+          public CompletableFuture<AwsCredentialsIdentity> resolveIdentity(
+              ResolveIdentityRequest request) {
+            resolveCalled.set(true);
+            return CompletableFuture.failedFuture(
+                SdkClientException.create("expected credential failure"));
+          }
+        };
+
+    AwsKmsClient client = new AwsKmsClient(keyUri);
+    client.withCredentialsProvider(identityProvider);
+    Aead aead = client.getAead(keyUri);
+
+    assertThrows(
+        GeneralSecurityException.class,
+        () -> aead.encrypt("plaintext".getBytes(UTF_8), new byte[0]));
+    assertThat(resolveCalled.get()).isTrue();
   }
 
   @Test
