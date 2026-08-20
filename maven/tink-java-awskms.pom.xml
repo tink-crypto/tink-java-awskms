@@ -96,6 +96,11 @@
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
+      <artifactId>identity-spi</artifactId>
+      <version>${aws-sdk-v2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
       <artifactId>kms</artifactId>
       <version>${aws-sdk-v2.version}</version>
     </dependency>

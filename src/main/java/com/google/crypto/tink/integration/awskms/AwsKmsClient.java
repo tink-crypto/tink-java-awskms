@@ -33,6 +33,8 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.IdentityProvider;
 import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClientBuilder;
@@ -49,7 +51,7 @@ public final class AwsKmsClient implements KmsClient {
 
   @Nullable private software.amazon.awssdk.services.kms.KmsClient awsKms;
   @Nullable private String keyUri;
-  @Nullable private AwsCredentialsProvider provider;
+  @Nullable private IdentityProvider<? extends AwsCredentialsIdentity> provider;
 
   /**
    * Constructs a generic AwsKmsClient that is not bound to any specific key.
@@ -153,6 +155,24 @@ public final class AwsKmsClient implements KmsClient {
   @CanIgnoreReturnValue
   public KmsClient withCredentialsProvider(AwsCredentialsProvider provider)
       throws GeneralSecurityException {
+    this.provider = provider;
+    return this;
+  }
+
+  /**
+   * Loads AWS credentials from a provider that is not necessarily a synchronous {@link
+   * AwsCredentialsProvider}.
+   *
+   * <p>Accepts the more general {@link IdentityProvider} alongside the {@link
+   * #withCredentialsProvider(AwsCredentialsProvider)} overload -- rather than replacing it -- so
+   * callers whose credential source is naturally asynchronous, one that can only implement {@link
+   * IdentityProvider#resolveIdentity} and not a synchronous {@link
+   * AwsCredentialsProvider#resolveCredentials}, don't need to fake a synchronous implementation
+   * just to satisfy this method, without breaking existing callers of the other overload.
+   */
+  @CanIgnoreReturnValue
+  public KmsClient withCredentialsProvider(
+      IdentityProvider<? extends AwsCredentialsIdentity> provider) throws GeneralSecurityException {
     this.provider = provider;
     return this;
   }
