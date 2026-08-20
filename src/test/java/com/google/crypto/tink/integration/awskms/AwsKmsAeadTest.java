@@ -24,11 +24,16 @@ import com.google.crypto.tink.Aead;
 import com.google.crypto.tink.aead.AeadConfig;
 import com.google.crypto.tink.subtle.Random;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.CompletionException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DecryptRequest;
+import software.amazon.awssdk.services.kms.model.DecryptResponse;
+import software.amazon.awssdk.services.kms.model.EncryptRequest;
+import software.amazon.awssdk.services.kms.model.EncryptResponse;
 
 /** Tests for AwsKmsAead. */
 @RunWith(JUnit4.class)
@@ -122,5 +127,68 @@ public class AwsKmsAeadTest {
     String invalidArn = "@#$@#$@#";
     Aead aeadWithInvalidArn = new AwsKmsAead(kms, invalidArn);
     assertThat(aeadWithInvalidArn.decrypt(ciphertext, aad)).isEqualTo(message);
+  }
+
+  @Test
+  public void testEncryptWithCompletionExceptionCause_translatedToGeneralSecurityException()
+      throws Exception {
+    GeneralSecurityException credentialFailure =
+        new GeneralSecurityException("credential refresh failed");
+    KmsClient kms = new ThrowingKmsClient(new CompletionException(credentialFailure));
+    Aead aead = new AwsKmsAead(kms, KEY_ARN);
+
+    GeneralSecurityException thrown =
+        assertThrows(
+            GeneralSecurityException.class,
+            () -> aead.encrypt(Random.randBytes(20), Random.randBytes(20)));
+
+    assertThat(thrown).hasCauseThat().isEqualTo(credentialFailure);
+  }
+
+  @Test
+  public void testDecryptWithCompletionExceptionCause_translatedToGeneralSecurityException()
+      throws Exception {
+    GeneralSecurityException credentialFailure =
+        new GeneralSecurityException("credential refresh failed");
+    KmsClient kms = new ThrowingKmsClient(new CompletionException(credentialFailure));
+    Aead aead = new AwsKmsAead(kms, KEY_ARN);
+
+    GeneralSecurityException thrown =
+        assertThrows(
+            GeneralSecurityException.class,
+            () -> aead.decrypt(Random.randBytes(20), Random.randBytes(20)));
+
+    assertThat(thrown).hasCauseThat().isEqualTo(credentialFailure);
+  }
+
+  /**
+   * A fake {@link KmsClient} whose {@code encrypt}/{@code decrypt} always throw a given {@link
+   * CompletionException}, simulating what the AWS SDK's internal synchronous credential resolution
+   * does when the configured credentials provider fails with a checked exception.
+   */
+  private static final class ThrowingKmsClient implements KmsClient {
+    private final CompletionException exception;
+
+    ThrowingKmsClient(CompletionException exception) {
+      this.exception = exception;
+    }
+
+    @Override
+    public EncryptResponse encrypt(EncryptRequest request) {
+      throw exception;
+    }
+
+    @Override
+    public DecryptResponse decrypt(DecryptRequest request) {
+      throw exception;
+    }
+
+    @Override
+    public String serviceName() {
+      return "kms";
+    }
+
+    @Override
+    public void close() {}
   }
 }

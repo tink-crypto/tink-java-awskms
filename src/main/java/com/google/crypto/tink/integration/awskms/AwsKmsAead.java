@@ -22,6 +22,7 @@ import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.kms.KmsClient;
@@ -67,6 +68,12 @@ public final class AwsKmsAead implements Aead {
       return response.ciphertextBlob().asByteArray();
     } catch (SdkClientException | KmsException e) {
       throw new GeneralSecurityException("encryption failed", e);
+    } catch (CompletionException e) {
+      // The SDK's internal synchronous credential resolution can throw this, still wrapping its
+      // cause, when that cause is not itself a RuntimeException (e.g. a credentials provider that
+      // fails with a checked exception).
+      throw new GeneralSecurityException(
+          "encryption failed", e.getCause() == null ? e : e.getCause());
     }
   }
 
@@ -95,6 +102,10 @@ public final class AwsKmsAead implements Aead {
       return result.plaintext().asByteArray();
     } catch (SdkClientException | KmsException e) {
       throw new GeneralSecurityException("decryption failed", e);
+    } catch (CompletionException e) {
+      // See the comment in encrypt() above.
+      throw new GeneralSecurityException(
+          "decryption failed", e.getCause() == null ? e : e.getCause());
     }
   }
 
