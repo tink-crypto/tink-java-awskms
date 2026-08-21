@@ -162,6 +162,22 @@ public class AwsKmsAeadTest {
   }
 
   @Test
+  public void
+      testEncryptWithCompletionExceptionUnrelatedCheckedCause_translatedToGeneralSecurityException()
+          throws Exception {
+    java.io.IOException unrelatedFailure = new java.io.IOException("unrelated checked failure");
+    KmsClient kms = new ThrowingKmsClient(new CompletionException(unrelatedFailure));
+    Aead aead = new AwsKmsAead(kms, KEY_ARN);
+
+    GeneralSecurityException thrown =
+        assertThrows(
+            GeneralSecurityException.class,
+            () -> aead.encrypt(Random.randBytes(20), Random.randBytes(20)));
+
+    assertThat(thrown).hasCauseThat().isEqualTo(unrelatedFailure);
+  }
+
+  @Test
   public void testEncryptWithCompletionExceptionRuntimeExceptionCause_propagatedUnchanged()
       throws Exception {
     CompletionException exception = new CompletionException(new IllegalStateException("bug"));
