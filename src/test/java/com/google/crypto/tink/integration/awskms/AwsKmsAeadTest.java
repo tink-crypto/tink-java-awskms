@@ -161,6 +161,92 @@ public class AwsKmsAeadTest {
     assertThat(thrown).hasCauseThat().isEqualTo(credentialFailure);
   }
 
+  @Test
+  public void testEncryptWithCompletionExceptionRuntimeExceptionCause_propagatedUnchanged()
+      throws Exception {
+    CompletionException exception = new CompletionException(new IllegalStateException("bug"));
+    KmsClient kms = new ThrowingKmsClient(exception);
+    Aead aead = new AwsKmsAead(kms, KEY_ARN);
+
+    CompletionException thrown =
+        assertThrows(
+            CompletionException.class,
+            () -> aead.encrypt(Random.randBytes(20), Random.randBytes(20)));
+
+    assertThat(thrown).isSameInstanceAs(exception);
+  }
+
+  @Test
+  public void testDecryptWithCompletionExceptionRuntimeExceptionCause_propagatedUnchanged()
+      throws Exception {
+    CompletionException exception = new CompletionException(new IllegalStateException("bug"));
+    KmsClient kms = new ThrowingKmsClient(exception);
+    Aead aead = new AwsKmsAead(kms, KEY_ARN);
+
+    CompletionException thrown =
+        assertThrows(
+            CompletionException.class,
+            () -> aead.decrypt(Random.randBytes(20), Random.randBytes(20)));
+
+    assertThat(thrown).isSameInstanceAs(exception);
+  }
+
+  @Test
+  public void testEncryptWithCompletionExceptionErrorCause_propagatedUnchanged() throws Exception {
+    CompletionException exception = new CompletionException(new AssertionError("fatal"));
+    KmsClient kms = new ThrowingKmsClient(exception);
+    Aead aead = new AwsKmsAead(kms, KEY_ARN);
+
+    CompletionException thrown =
+        assertThrows(
+            CompletionException.class,
+            () -> aead.encrypt(Random.randBytes(20), Random.randBytes(20)));
+
+    assertThat(thrown).isSameInstanceAs(exception);
+  }
+
+  @Test
+  public void testDecryptWithCompletionExceptionErrorCause_propagatedUnchanged() throws Exception {
+    CompletionException exception = new CompletionException(new AssertionError("fatal"));
+    KmsClient kms = new ThrowingKmsClient(exception);
+    Aead aead = new AwsKmsAead(kms, KEY_ARN);
+
+    CompletionException thrown =
+        assertThrows(
+            CompletionException.class,
+            () -> aead.decrypt(Random.randBytes(20), Random.randBytes(20)));
+
+    assertThat(thrown).isSameInstanceAs(exception);
+  }
+
+  @Test
+  public void testEncryptWithCauselessCompletionException_propagatedUnchanged() throws Exception {
+    CompletionException exception = new CompletionException("no cause", null);
+    KmsClient kms = new ThrowingKmsClient(exception);
+    Aead aead = new AwsKmsAead(kms, KEY_ARN);
+
+    CompletionException thrown =
+        assertThrows(
+            CompletionException.class,
+            () -> aead.encrypt(Random.randBytes(20), Random.randBytes(20)));
+
+    assertThat(thrown).isSameInstanceAs(exception);
+  }
+
+  @Test
+  public void testDecryptWithCauselessCompletionException_propagatedUnchanged() throws Exception {
+    CompletionException exception = new CompletionException("no cause", null);
+    KmsClient kms = new ThrowingKmsClient(exception);
+    Aead aead = new AwsKmsAead(kms, KEY_ARN);
+
+    CompletionException thrown =
+        assertThrows(
+            CompletionException.class,
+            () -> aead.decrypt(Random.randBytes(20), Random.randBytes(20)));
+
+    assertThat(thrown).isSameInstanceAs(exception);
+  }
+
   /**
    * A fake {@link KmsClient} whose {@code encrypt}/{@code decrypt} always throw a given {@link
    * CompletionException}, simulating what the AWS SDK's internal synchronous credential resolution

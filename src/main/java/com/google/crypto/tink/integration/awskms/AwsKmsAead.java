@@ -71,9 +71,14 @@ public final class AwsKmsAead implements Aead {
     } catch (CompletionException e) {
       // The SDK's internal synchronous credential resolution can throw this, still wrapping its
       // cause, when that cause is not itself a RuntimeException (e.g. a credentials provider that
-      // fails with a checked exception).
-      throw new GeneralSecurityException(
-          "encryption failed", e.getCause() == null ? e : e.getCause());
+      // fails with a checked exception). Only that specific checked-cause shape is translated; a
+      // null, RuntimeException, or Error cause means this isn't that shape, so the
+      // CompletionException itself is rethrown unchanged rather than guessed at.
+      Throwable cause = e.getCause();
+      if (cause == null || cause instanceof RuntimeException || cause instanceof Error) {
+        throw e;
+      }
+      throw new GeneralSecurityException("encryption failed", cause);
     }
   }
 
@@ -104,8 +109,11 @@ public final class AwsKmsAead implements Aead {
       throw new GeneralSecurityException("decryption failed", e);
     } catch (CompletionException e) {
       // See the comment in encrypt() above.
-      throw new GeneralSecurityException(
-          "decryption failed", e.getCause() == null ? e : e.getCause());
+      Throwable cause = e.getCause();
+      if (cause == null || cause instanceof RuntimeException || cause instanceof Error) {
+        throw e;
+      }
+      throw new GeneralSecurityException("decryption failed", cause);
     }
   }
 
