@@ -33,6 +33,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClientBuilder;
@@ -50,6 +51,7 @@ public final class AwsKmsClient implements KmsClient {
   @Nullable private software.amazon.awssdk.services.kms.KmsClient awsKms;
   @Nullable private String keyUri;
   @Nullable private AwsCredentialsProvider provider;
+  @Nullable private SdkHttpClient httpClient;
 
   /**
    * Constructs a generic AwsKmsClient that is not bound to any specific key.
@@ -158,6 +160,19 @@ public final class AwsKmsClient implements KmsClient {
   }
 
   /**
+   * Specifies the {@link SdkHttpClient} to use for AWS KMS requests, instead of the SDK's default
+   * (Apache-based) one -- for example, to avoid the default client's dependency on {@code
+   * commons-logging}.
+   *
+   * <p>The caller retains ownership of {@code httpClient}; this class does not close it.
+   */
+  @CanIgnoreReturnValue
+  public KmsClient withHttpClient(SdkHttpClient httpClient) {
+    this.httpClient = httpClient;
+    return this;
+  }
+
+  /**
    * Specifies the {@link software.amazon.awssdk.services.kms.KmsClient} object to be used. Only
    * used for testing.
    */
@@ -195,6 +210,9 @@ public final class AwsKmsClient implements KmsClient {
         KmsClientBuilder builder = software.amazon.awssdk.services.kms.KmsClient.builder();
         if (provider != null) {
           builder.credentialsProvider(provider);
+        }
+        if (httpClient != null) {
+          builder.httpClient(httpClient);
         }
         client = builder.region(Region.of(regionName)).build();
       }

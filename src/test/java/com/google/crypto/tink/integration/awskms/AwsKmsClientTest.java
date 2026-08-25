@@ -35,11 +35,16 @@ import com.google.crypto.tink.aead.KmsEnvelopeAeadKeyManager;
 import com.google.crypto.tink.aead.PredefinedAeadParameters;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
+import software.amazon.awssdk.http.ExecutableHttpRequest;
+import software.amazon.awssdk.http.HttpExecuteRequest;
+import software.amazon.awssdk.http.SdkHttpClient;
 
 /** Tests for AwsKmsClient. */
 @RunWith(JUnit4.class)
@@ -255,5 +260,40 @@ public final class AwsKmsClientTest {
     KmsClient client = new AwsKmsClient().withAwsKms(new FakeAwsKms(asList(invalidUri)));
 
     assertThrows(IllegalArgumentException.class, () -> client.getAead(invalidUri));
+  }
+
+  @Test
+  public void withHttpClient_isUsedForKmsRequests() throws Exception {
+    String keyUri =
+        "aws-kms://arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab";
+    RecordingHttpClient httpClient = new RecordingHttpClient();
+
+    AwsKmsClient client = new AwsKmsClient(keyUri);
+    client.withCredentialsProvider(AnonymousCredentialsProvider.create());
+    client.withHttpClient(httpClient);
+    Aead aead = client.getAead(keyUri);
+
+    // RecordingHttpClient always throws, regardless of what the SDK wraps that in -- this test
+    // only needs to prove withHttpClient's client is what the request actually reaches.
+    assertThrows(Throwable.class, () -> aead.encrypt("plaintext".getBytes(UTF_8), null));
+    assertThat(httpClient.prepareRequestCalled.get()).isTrue();
+  }
+
+  /**
+   * An {@link SdkHttpClient} that records whether {@link #prepareRequest} was called, then throws.
+   * It exists only to prove {@link AwsKmsClient#withHttpClient} plumbs through to the underlying
+   * AWS SDK client, not to execute real requests.
+   */
+  private static final class RecordingHttpClient implements SdkHttpClient {
+    final AtomicBoolean prepareRequestCalled = new AtomicBoolean(false);
+
+    @Override
+    public ExecutableHttpRequest prepareRequest(HttpExecuteRequest request) {
+      prepareRequestCalled.set(true);
+      throw new UnsupportedOperationException("RecordingHttpClient does not execute requests");
+    }
+
+    @Override
+    public void close() {}
   }
 }
