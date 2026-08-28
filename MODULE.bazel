@@ -51,12 +51,12 @@ maven.install(
         "org.ow2.asm:asm-commons:9.7.1",
         "org.ow2.asm:asm:9.7.1",
         "org.pantsbuild:jarjar:1.7.2",
-        "software.amazon.awssdk:auth:2.27.14",
-        "software.amazon.awssdk:kms:2.27.14",
-        "software.amazon.awssdk:profiles:2.27.14",
-        "software.amazon.awssdk:regions:2.27.14",
-        "software.amazon.awssdk:sdk-core:2.27.14",
-        "software.amazon.awssdk:utils:2.27.14",
+        "software.amazon.awssdk:auth:2.54.3",
+        "software.amazon.awssdk:kms:2.54.3",
+        "software.amazon.awssdk:profiles:2.54.3",
+        "software.amazon.awssdk:regions:2.54.3",
+        "software.amazon.awssdk:sdk-core:2.54.3",
+        "software.amazon.awssdk:utils:2.54.3",
         # go/keep-sorted end
     ],
     repositories = [
