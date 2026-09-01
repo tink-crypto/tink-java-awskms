@@ -254,6 +254,21 @@ public final class AwsKmsClientTest {
 
     KmsClient client = new AwsKmsClient().withAwsKms(new FakeAwsKms(asList(invalidUri)));
 
-    assertThrows(IllegalArgumentException.class, () -> client.getAead(invalidUri));
+    assertThrows(GeneralSecurityException.class, () -> client.getAead(invalidUri));
+  }
+
+  @Test
+  public void getAead_invalidKeyUri_fails() throws Exception {
+    KmsClient client = new AwsKmsClient();
+
+    assertThrows(
+        GeneralSecurityException.class, () -> client.getAead("invalid-prefix://something"));
+    assertThrows(GeneralSecurityException.class, () -> client.getAead("aws-kms://"));
+    assertThrows(GeneralSecurityException.class, () -> client.getAead("aws-kms://arn:aws:kms"));
+    assertThrows(
+        GeneralSecurityException.class,
+        () ->
+            client.getAead(
+                "aws-kms://arn:aws:kms::111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"));
   }
 }

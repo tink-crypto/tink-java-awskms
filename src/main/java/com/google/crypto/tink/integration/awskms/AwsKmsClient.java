@@ -167,9 +167,10 @@ public final class AwsKmsClient implements KmsClient {
     return this;
   }
 
-  private static String removePrefix(String expectedPrefix, String kmsKeyUri) {
+  private static String removePrefix(String expectedPrefix, String kmsKeyUri)
+      throws GeneralSecurityException {
     if (!kmsKeyUri.toLowerCase(Locale.US).startsWith(expectedPrefix)) {
-      throw new IllegalArgumentException(
+      throw new GeneralSecurityException(
           String.format("key URI must start with %s", expectedPrefix));
     }
     return kmsKeyUri.substring(expectedPrefix.length());
@@ -188,7 +189,7 @@ public final class AwsKmsClient implements KmsClient {
       software.amazon.awssdk.services.kms.KmsClient client = awsKms;
       List<String> tokens = Splitter.on(':').splitToList(keyId);
       if (tokens.size() < 4) {
-        throw new IllegalArgumentException("invalid key URI");
+        throw new GeneralSecurityException("invalid key URI");
       }
       String regionName = tokens.get(3);
       if (client == null) {
@@ -199,6 +200,8 @@ public final class AwsKmsClient implements KmsClient {
         client = builder.region(Region.of(regionName)).build();
       }
       return new AwsKmsAead(client, keyId);
+    } catch (IllegalArgumentException e) {
+      throw new GeneralSecurityException("invalid key URI", e);
     } catch (SdkClientException e) {
       throw new GeneralSecurityException("cannot load credentials from provider", e);
     }
