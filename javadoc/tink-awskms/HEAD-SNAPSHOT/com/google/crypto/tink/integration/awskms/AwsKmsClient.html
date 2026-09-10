@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":9,"i3":10,"i4":10,"i5":10};
+var data = {"i0":10,"i1":10,"i2":9,"i3":10,"i4":10,"i5":10,"i6":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -242,19 +242,26 @@ implements com.google.crypto.tink.KmsClient</pre>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>com.google.crypto.tink.KmsClient</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withAwsKms(software.amazon.awssdk.services.kms.KmsClient)">withAwsKms</a></span>&#8203;(software.amazon.awssdk.services.kms.KmsClient&nbsp;awsKms)</code></th>
+<td class="colLast">
+<div class="block">Specifies the <code>KmsClient</code> object to be used.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>com.google.crypto.tink.KmsClient</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withCredentials(java.lang.String)">withCredentials</a></span>&#8203;(java.lang.String&nbsp;credentialPath)</code></th>
 <td class="colLast">
 <div class="block">Loads AWS credentials from the default profile in the given credential file.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>com.google.crypto.tink.KmsClient</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withCredentialsProvider(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider)">withCredentialsProvider</a></span>&#8203;(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider&nbsp;provider)</code></th>
 <td class="colLast">
 <div class="block">Loads AWS credentials from a provider.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>com.google.crypto.tink.KmsClient</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withDefaultCredentials()">withDefaultCredentials</a></span>()</code></th>
 <td class="colLast">
@@ -428,6 +435,17 @@ public&nbsp;com.google.crypto.tink.KmsClient&nbsp;withCredentialsProvider&#8203;
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>java.security.GeneralSecurityException</code></dd>
 </dl>
+</li>
+</ul>
+<a id="withAwsKms(software.amazon.awssdk.services.kms.KmsClient)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>withAwsKms</h4>
+<pre class="methodSignature">@CanIgnoreReturnValue
+public&nbsp;com.google.crypto.tink.KmsClient&nbsp;withAwsKms&#8203;(software.amazon.awssdk.services.kms.KmsClient&nbsp;awsKms)</pre>
+<div class="block">Specifies the <code>KmsClient</code> object to be used.</div>
 </li>
 </ul>
 <a id="getAead(java.lang.String)">
