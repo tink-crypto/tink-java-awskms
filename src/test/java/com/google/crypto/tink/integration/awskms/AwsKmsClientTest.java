@@ -80,6 +80,29 @@ public final class AwsKmsClientTest {
   }
 
   @Test
+  public void withAwsKms_usesSuppliedKmsClient() throws Exception {
+    String keyId = "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab";
+    String keyUri =
+        "aws-kms://arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab";
+
+    FakeAwsKms fakeKms1 = new FakeAwsKms(asList(keyId));
+    FakeAwsKms fakeKms2 = new FakeAwsKms(asList(keyId));
+
+    KmsClient client1 = new AwsKmsClient().withAwsKms(fakeKms1);
+    KmsClient client2 = new AwsKmsClient().withAwsKms(fakeKms2);
+
+    Aead aead1 = client1.getAead(keyUri);
+    Aead aead2 = client2.getAead(keyUri);
+
+    byte[] plaintext = "plaintext".getBytes(UTF_8);
+    byte[] associatedData = "associatedData".getBytes(UTF_8);
+    byte[] ciphertext1 = aead1.encrypt(plaintext, associatedData);
+
+    assertThat(aead1.decrypt(ciphertext1, associatedData)).isEqualTo(plaintext);
+    assertThrows(GeneralSecurityException.class, () -> aead2.decrypt(ciphertext1, associatedData));
+  }
+
+  @Test
   public void invalidKeyUri_throws() throws Exception {
     assertThrows(IllegalArgumentException.class, () -> new AwsKmsClient("invalid://key-uri"));
   }

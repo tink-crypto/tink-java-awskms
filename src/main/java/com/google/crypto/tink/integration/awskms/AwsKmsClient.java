@@ -157,12 +157,9 @@ public final class AwsKmsClient implements KmsClient {
     return this;
   }
 
-  /**
-   * Specifies the {@link software.amazon.awssdk.services.kms.KmsClient} object to be used. Only
-   * used for testing.
-   */
+  /** Specifies the {@link software.amazon.awssdk.services.kms.KmsClient} object to be used. */
   @CanIgnoreReturnValue
-  KmsClient withAwsKms(@Nullable software.amazon.awssdk.services.kms.KmsClient awsKms) {
+  public KmsClient withAwsKms(software.amazon.awssdk.services.kms.KmsClient awsKms) {
     this.awsKms = awsKms;
     return this;
   }
@@ -247,7 +244,9 @@ public final class AwsKmsClient implements KmsClient {
     } else {
       client.withDefaultCredentials();
     }
-    client.withAwsKms(awsKms);
+    if (awsKms != null) {
+      client.withAwsKms(awsKms);
+    }
     KmsClients.add(client);
   }
 }
