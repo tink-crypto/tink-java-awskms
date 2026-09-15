@@ -22,6 +22,7 @@ import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.kms.KmsClient;
@@ -67,6 +68,17 @@ public final class AwsKmsAead implements Aead {
       return response.ciphertextBlob().asByteArray();
     } catch (SdkClientException | KmsException e) {
       throw new GeneralSecurityException("encryption failed", e);
+    } catch (CompletionException e) {
+      // The SDK's internal synchronous credential resolution can throw this, still wrapping its
+      // cause, when that cause is not itself a RuntimeException (e.g. a credentials provider that
+      // fails with a checked exception). Only that specific checked-cause shape is translated; a
+      // null, RuntimeException, or Error cause means this isn't that shape, so the
+      // CompletionException itself is rethrown unchanged rather than guessed at.
+      Throwable cause = e.getCause();
+      if (cause == null || cause instanceof RuntimeException || cause instanceof Error) {
+        throw e;
+      }
+      throw new GeneralSecurityException("encryption failed", cause);
     }
   }
 
@@ -95,6 +107,13 @@ public final class AwsKmsAead implements Aead {
       return result.plaintext().asByteArray();
     } catch (SdkClientException | KmsException e) {
       throw new GeneralSecurityException("decryption failed", e);
+    } catch (CompletionException e) {
+      // See the comment in encrypt() above.
+      Throwable cause = e.getCause();
+      if (cause == null || cause instanceof RuntimeException || cause instanceof Error) {
+        throw e;
+      }
+      throw new GeneralSecurityException("decryption failed", cause);
     }
   }
 
