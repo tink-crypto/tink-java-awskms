@@ -24,12 +24,12 @@ bazel_dep(name = "rules_shell", version = "0.8.0")
 bazel_dep(name = "rules_android", version = "0.6.6", repo_name = "build_bazel_rules_android")
 bazel_dep(name = "platforms", version = "1.0.0")
 
-_TINK_JAVA_VERSION = "1.21.0"
+_TINK_JAVA_VERSION = "1.24.0"
 
 bazel_dep(name = "tink_java", dev_dependency = True)
 archive_override(
     module_name = "tink_java",
-    integrity = "sha256-3cJVMyGLIAsKjxVAEVDBv+eU2moySVy733sgnQYXAk0=",
+    integrity = "sha256-e2IHi66Q1O9xIBpXK6DmnmS2h1LaX1VVrkyXH3Fne0I=",
     strip_prefix = "tink-java-%s" % _TINK_JAVA_VERSION,
     urls = ["https://github.com/tink-crypto/tink-java/archive/refs/tags/v%s.tar.gz" % _TINK_JAVA_VERSION],
 )
