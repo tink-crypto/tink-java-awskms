@@ -19,7 +19,7 @@ echo "==========================================================================
 echo "Tink Script ID: fb3b150c1c0154215c1a (to quickly find the script from logs)"
 echo "================================================================================"
 
-set -eEuox pipefail
+set -eEuo pipefail
 
 # Fail if RELEASE_VERSION is not set.
 if [[ -z "${RELEASE_VERSION:-}" ]]; then
@@ -111,7 +111,7 @@ readonly BASE64TOKENFILE="$(mktemp)"
   --mode=decrypt
 readonly BASE64TOKEN="$(cat ${BASE64TOKENFILE})"
 
-curl --request POST \
+curl --fail --request POST \
   --header "Authorization: Bearer ${BASE64TOKEN}" \
   --form bundle=@kokoro_upload_dir/release/tink-awskms-release-bundle.zip \
   https://central.sonatype.com/api/v1/publisher/upload
