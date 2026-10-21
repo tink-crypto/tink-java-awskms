@@ -19,9 +19,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.crypto.tink.Aead;
 import com.google.crypto.tink.KeysetHandle;
 import com.google.crypto.tink.KmsClient;
-import com.google.crypto.tink.RegistryConfiguration;
 import com.google.crypto.tink.TinkJsonProtoKeysetFormat;
-import com.google.crypto.tink.aead.AeadConfig;
+import com.google.crypto.tink.aead.AeadConfig2026;
 import com.google.crypto.tink.aead.PredefinedAeadParameters;
 import com.google.crypto.tink.integration.awskms.AwsKmsClient;
 import java.io.IOException;
@@ -51,10 +50,11 @@ public final class HelloWorld {
   /** Creates a new keyset with one AEAD key, and write it encrypted to disk. */
   private static void createAndWriteEncryptedKeyset(Path keysetPath, Aead keysetEncryptionAead)
       throws GeneralSecurityException, IOException {
-    KeysetHandle handle = KeysetHandle.generateNew(PredefinedAeadParameters.AES128_GCM);
+    KeysetHandle handle =
+        KeysetHandle.generateNew(PredefinedAeadParameters.AES128_GCM, AeadConfig2026.get());
     String serializedEncryptedKeyset =
         TinkJsonProtoKeysetFormat.serializeEncryptedKeyset(
-            handle, keysetEncryptionAead, new byte[0]);
+            handle, keysetEncryptionAead, new byte[0], AeadConfig2026.get());
     Files.write(keysetPath, serializedEncryptedKeyset.getBytes(UTF_8));
   }
 
@@ -62,7 +62,10 @@ public final class HelloWorld {
   private static KeysetHandle readEncryptedKeyset(Path keysetPath, Aead keysetEncryptionAead)
       throws GeneralSecurityException, IOException {
     return TinkJsonProtoKeysetFormat.parseEncryptedKeyset(
-        new String(Files.readAllBytes(keysetPath), UTF_8), keysetEncryptionAead, new byte[0]);
+        new String(Files.readAllBytes(keysetPath), UTF_8),
+        keysetEncryptionAead,
+        new byte[0],
+        AeadConfig2026.get());
   }
 
   public static void main(String[] args) throws Exception {
@@ -75,9 +78,6 @@ public final class HelloWorld {
     Path credentialsPath = Paths.get(args[1]);
     String keysetEncryptionKeyUri = args[2];
 
-    // Register all AEAD key types with the Tink runtime.
-    AeadConfig.register();
-
     KmsClient client = new AwsKmsClient().withCredentials(credentialsPath.toString());
     Aead keysetEncryptionAead = client.getAead(keysetEncryptionKeyUri);
 
@@ -89,7 +89,7 @@ public final class HelloWorld {
     createAndWriteEncryptedKeyset(keysetPath, keysetEncryptionAead);
 
     KeysetHandle keysetHandle = readEncryptedKeyset(keysetPath, keysetEncryptionAead);
-    Aead aead = keysetHandle.getPrimitive(RegistryConfiguration.get(), Aead.class);
+    Aead aead = keysetHandle.getPrimitive(AeadConfig2026.get(), Aead.class);
 
     byte[] ciphertext = aead.encrypt(plaintext, associatedData);
     byte[] decrypted = aead.decrypt(ciphertext, associatedData);
