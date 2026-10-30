@@ -23,11 +23,11 @@ java_test(
     deps = [
         "@tink_java//src/main/java/com/google/crypto/tink:aead",
         "@tink_java//src/main/java/com/google/crypto/tink:key_template",
-        "@tink_java//src/main/java/com/google/crypto/tink:key_templates",
         "@tink_java//src/main/java/com/google/crypto/tink:kms_client",
         "@tink_java//src/main/java/com/google/crypto/tink:kms_clients_test_util",
         "@tink_java//src/main/java/com/google/crypto/tink:registry_cluster",
         "@tink_java//src/main/java/com/google/crypto/tink/aead:aead_config",
+        "@tink_java//src/main/java/com/google/crypto/tink/aead:aes_ctr_hmac_aead_parameters",
         "@tink_java//src/main/java/com/google/crypto/tink/aead:kms_aead_config2026",
         "@tink_java//src/main/java/com/google/crypto/tink/aead:kms_aead_key_manager",
         "@tink_java//src/main/java/com/google/crypto/tink/aead:kms_envelope_aead",
