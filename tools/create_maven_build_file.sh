@@ -14,6 +14,11 @@
 # limitations under the License.
 ################################################################################
 
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: 4d240289dc5cb526b507 (to quickly find the script from logs)"
+echo "================================================================================"
+
 set -euo pipefail
 
 BAZEL_CMD="bazel"
