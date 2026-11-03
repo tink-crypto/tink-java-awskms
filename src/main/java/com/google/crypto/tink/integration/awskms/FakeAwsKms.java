@@ -17,7 +17,7 @@ package com.google.crypto.tink.integration.awskms;
 
 import com.google.crypto.tink.Aead;
 import com.google.crypto.tink.KeysetHandle;
-import com.google.crypto.tink.RegistryConfiguration;
+import com.google.crypto.tink.aead.AeadConfig2026;
 import com.google.crypto.tink.aead.PredefinedAeadParameters;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
@@ -55,8 +55,8 @@ final class FakeAwsKms implements KmsClient {
   public FakeAwsKms(List<String> validKeyIds) throws GeneralSecurityException {
     for (String keyId : validKeyIds) {
       Aead aead =
-          KeysetHandle.generateNew(PredefinedAeadParameters.AES128_GCM)
-              .getPrimitive(RegistryConfiguration.get(), Aead.class);
+          KeysetHandle.generateNew(PredefinedAeadParameters.AES128_GCM, AeadConfig2026.get())
+              .getPrimitive(AeadConfig2026.get(), Aead.class);
       aeads.put(keyId, aead);
     }
   }
